@@ -1,0 +1,2043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STRUCTURA — Structural Analysis Suite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0c0e14;--bg2:#111420;--bg3:#161b2c;--bg4:#1e2438;
+  --border:#232a40;--border2:#2e3858;--border3:#3a4870;
+  --text:#dde3f5;--text2:#8090c0;--text3:#4a5680;
+  --accent:#4f8ef7;--accent2:#2960d0;--accent3:#1a45a8;
+  --green:#30c97a;--green2:rgba(48,201,122,0.12);
+  --red:#f75f5f;--red2:rgba(247,95,95,0.12);
+  --amber:#f7b94f;--amber2:rgba(247,185,79,0.1);
+  --cyan:#4fd6f7;--cyan2:rgba(79,214,247,0.1);
+  --purple:#a87fff;--purple2:rgba(168,127,255,0.12);
+  --r:8px;--r2:12px;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'IBM Plex Sans',sans-serif;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px;display:flex;flex-direction:column}
+
+/* ── TOPBAR ── */
+.topbar{height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:16px;flex-shrink:0;z-index:100}
+.logo-mark{width:30px;height:30px;background:linear-gradient(135deg,var(--accent2),var(--accent));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0}
+.logo-text{font-size:16px;font-weight:700;letter-spacing:.6px;color:var(--text)}
+.logo-sep{width:1px;height:20px;background:var(--border2)}
+.logo-sub{font-size:11px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-family:var(--mono)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.module-pill{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.5px;border:1px solid var(--border2);color:var(--text3);cursor:pointer;transition:all .2s;text-transform:uppercase}
+.module-pill.active{background:var(--accent2);border-color:var(--accent);color:#fff}
+.module-pill.soon{opacity:.35;cursor:default}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── LAYOUT ── */
+.workspace{display:flex;flex:1;overflow:hidden}
+.sidebar{width:340px;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column}
+.main{flex:1;overflow-y:auto;background:var(--bg);padding:20px 24px}
+
+/* ── SIDEBAR PANELS ── */
+.panel{padding:14px 18px;border-bottom:1px solid var(--border)}
+.panel-hdr{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1.8px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.panel-hdr::before{content:'';width:3px;height:12px;border-radius:2px;background:var(--accent);display:block}
+label{display:block;font-size:11px;color:var(--text2);margin-bottom:4px;margin-top:10px;letter-spacing:.3px}
+label:first-child{margin-top:0}
+input[type=number],select{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);color:var(--text);padding:7px 10px;font-size:12px;font-family:var(--mono);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
+input[type=number]:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,142,247,.12)}
+input.err{border-color:var(--red)!important}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+
+/* ── SUPPORT BUTTONS ── */
+.sup-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.sup-btn{padding:5px 11px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--text3);transition:all .15s;font-family:var(--mono);letter-spacing:.3px}
+.sup-btn:hover{border-color:var(--border3)}
+.sup-btn.s1{border-color:var(--accent);background:rgba(79,142,247,.1);color:var(--accent)}
+.sup-btn.s2{border-color:var(--purple);background:var(--purple2);color:var(--purple)}
+.sup-btn.s0{border-color:var(--red);background:var(--red2);color:var(--red)}
+
+/* ── LOAD ROWS ── */
+.load-hdr{display:grid;grid-template-columns:36px 1fr 72px 68px 30px;gap:4px;margin-bottom:5px}
+.load-hdr span{font-size:9px;color:var(--text3);letter-spacing:.8px;text-transform:uppercase;padding:0 2px}
+.load-row{display:grid;grid-template-columns:36px 1fr 72px 68px 30px;gap:4px;align-items:center;margin-bottom:5px}
+.load-row input,.load-row select{padding:5px 7px;font-size:11px}
+.nodal-hdr{display:grid;grid-template-columns:36px 1fr 1fr 30px;gap:4px;margin-bottom:5px}
+.nodal-hdr span{font-size:9px;color:var(--text3);letter-spacing:.8px;text-transform:uppercase;padding:0 2px}
+.nodal-row{display:grid;grid-template-columns:36px 1fr 1fr 30px;gap:4px;align-items:center;margin-bottom:5px}
+.btn-del{background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--text3);cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;flex-shrink:0}
+.btn-del:hover{border-color:var(--red);color:var(--red);background:var(--red2)}
+.btn-add{background:transparent;border:1px dashed var(--border2);border-radius:6px;color:var(--text3);cursor:pointer;padding:7px 12px;font-size:11px;width:100%;margin-top:6px;transition:all .15s;font-family:var(--sans);text-align:center}
+.btn-add:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── SOLVE BUTTON ── */
+.solve-panel{padding:14px 18px 18px}
+.btn-solve{width:100%;padding:13px;background:var(--accent2);border:1px solid var(--accent3);border-radius:var(--r);color:#fff;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.8px;transition:all .2s;font-family:var(--sans);text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-solve:hover{background:var(--accent);box-shadow:0 4px 20px rgba(79,142,247,.25)}
+.btn-solve:active{transform:scale(.99)}
+.err-msg{color:var(--red);font-size:11px;margin-top:8px;padding:8px 10px;background:var(--red2);border-radius:6px;border:1px solid rgba(247,95,95,.2);display:none;line-height:1.5}
+
+/* ── MAIN AREA ── */
+.placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 130px);gap:14px;color:var(--text3)}
+.ph-hex{font-size:72px;opacity:.15;line-height:1}
+.ph-title{font-size:16px;color:var(--text2);font-weight:500}
+.ph-sub{font-size:12px;text-align:center;line-height:1.7;max-width:340px}
+.ph-tags{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px}
+.ph-tag{padding:3px 10px;border-radius:4px;font-size:10px;font-weight:600;background:var(--bg3);border:1px solid var(--border2);color:var(--text3);font-family:var(--mono);letter-spacing:.5px}
+
+/* ── TABS ── */
+.tabs-bar{display:flex;gap:2px;background:var(--bg3);border-radius:10px;padding:3px;margin-bottom:18px;border:1px solid var(--border)}
+.tab-btn{flex:1;padding:8px;text-align:center;border-radius:8px;cursor:pointer;font-size:12px;color:var(--text3);font-weight:500;transition:all .15s;letter-spacing:.3px}
+.tab-btn.active{background:var(--accent2);color:#fff;box-shadow:0 2px 8px rgba(79,142,247,.2)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* ── SECTION TITLES ── */
+.sec-title{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── CARDS ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px;margin-bottom:14px}
+.card-sm{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
+
+/* ── CHARTS ── */
+.chart-wrap{position:relative;width:100%;height:200px}
+.chart-legend{display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)}
+.legend-dot{width:10px;height:3px;border-radius:2px}
+
+/* ── BEAM SVG ── */
+.beam-svg-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px 20px;margin-bottom:14px;overflow-x:auto;min-height:200px}
+
+/* ── TABLES ── */
+.eng-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px}
+.eng-table th{color:var(--text3);font-weight:500;padding:8px 12px;text-align:right;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:.8px;text-transform:uppercase}
+.eng-table th:first-child{text-align:left}
+.eng-table td{padding:7px 12px;color:var(--text2);text-align:right;border-bottom:1px solid var(--border)}
+.eng-table td:first-child{text-align:left;color:var(--text3)}
+.eng-table tr:last-child td{border-bottom:none}
+.eng-table .pos{color:var(--green)}
+.eng-table .neg{color:var(--red)}
+.eng-table .num{color:var(--cyan)}
+.eng-table tr:hover td{background:var(--bg3)}
+
+/* ── REACTION CARDS ── */
+.rxn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+.rxn-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;transition:border-color .2s}
+.rxn-card:hover{border-color:var(--border3)}
+.rxn-label{font-size:10px;color:var(--text3);margin-bottom:6px;letter-spacing:.5px}
+.rxn-val{font-size:20px;font-weight:700;font-family:var(--mono);line-height:1}
+.rxn-val.pos{color:var(--green)}
+.rxn-val.neg{color:var(--red)}
+.rxn-unit{font-size:10px;color:var(--text3);margin-top:4px}
+
+/* ── DISP GRID ── */
+.disp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:14px}
+.disp-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px}
+.disp-dof{font-size:10px;color:var(--text3);margin-bottom:4px;font-family:var(--mono)}
+.disp-val{font-size:13px;font-weight:600;font-family:var(--mono)}
+
+/* ── SUMMARY STATS ── */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+.stat-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
+.stat-label{font-size:10px;color:var(--text3);margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase}
+.stat-val{font-size:16px;font-weight:600;font-family:var(--mono);color:var(--cyan)}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border3)}
+
+/* ── TOOLTIP ── */
+#tooltip{position:fixed;background:var(--bg4);border:1px solid var(--border3);border-radius:6px;padding:6px 10px;font-size:11px;font-family:var(--mono);color:var(--text);pointer-events:none;opacity:0;transition:opacity .15s;z-index:999;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo-mark">S</div>
+  <div class="logo-text">STRUCTURA</div>
+  <div class="logo-sep"></div>
+  <div class="logo-sub">Structural Analysis Suite</div>
+  <div class="topbar-right">
+    <div class="module-pill active" id="pill-beam" onclick="switchModule('beam')">N-Span Beam</div>
+    <div class="module-pill" id="pill-frame" onclick="switchModule('frame')">2D Frame</div>
+    <div class="module-pill soon">2D Truss</div>
+    <div class="module-pill soon">3D Frame</div>
+    <div class="status-dot" title="Solver ready"></div>
+  </div>
+</div>
+
+<div id="module-beam" class="workspace">
+
+<!-- ══════════ SIDEBAR ══════════ -->
+<aside class="sidebar">
+
+  <!-- GEOMETRY -->
+  <div class="panel">
+    <div class="panel-hdr">Geometry</div>
+    <label>Number of Spans</label>
+    <input type="number" id="n-spans" value="2" min="1" max="10" oninput="rebuildGeometry()">
+    <div id="span-inputs"></div>
+  </div>
+
+  <!-- SUPPORTS -->
+  <div class="panel">
+    <div class="panel-hdr">Support Conditions</div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:8px;line-height:1.6">
+      Click node to cycle &nbsp;→&nbsp;
+      <span style="color:var(--accent)">Pin</span> ·
+      <span style="color:var(--purple)">Fixed</span> ·
+      <span style="color:var(--red)">Free</span>
+    </div>
+    <div id="support-grid" class="sup-row"></div>
+  </div>
+
+  <!-- SPAN LOADS -->
+  <div class="panel">
+    <div class="panel-hdr">Span Loads</div>
+    <div class="load-hdr">
+      <span>Span</span><span>Type</span><span>Mag</span><span>Dist</span><span></span>
+    </div>
+    <div id="span-loads"></div>
+    <button class="btn-add" onclick="addSpanLoad()">＋ Add Span Load</button>
+  </div>
+
+  <!-- NODAL LOADS -->
+  <div class="panel">
+    <div class="panel-hdr">Nodal Loads</div>
+    <div class="nodal-hdr">
+      <span>Node</span><span>Force Y (kN)</span><span>Moment (kNm)</span><span></span>
+    </div>
+    <div id="nodal-loads"></div>
+    <button class="btn-add" onclick="addNodalLoad()">＋ Add Nodal Load</button>
+  </div>
+
+  <!-- SOLVE -->
+  <div class="solve-panel" style="margin-top:auto">
+    <button class="btn-solve" onclick="solve()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Analyze Structure
+    </button>
+    <div class="err-msg" id="err-msg"></div>
+  </div>
+
+</aside>
+
+<!-- ══════════ MAIN ══════════ -->
+<main class="main">
+
+  <!-- PLACEHOLDER -->
+  <div class="placeholder" id="placeholder">
+    <div class="ph-hex">⬡</div>
+    <div class="ph-title">N-Span Continuous Beam Solver</div>
+    <div class="ph-sub">
+      Configure geometry, support conditions, and loads in the panel on the left, then click Analyze to compute reactions, SFD, BMD, and deflection curves using the stiffness method.
+    </div>
+    <div class="ph-tags">
+      <span class="ph-tag">6 Load Types</span>
+      <span class="ph-tag">Auto DOF</span>
+      <span class="ph-tag">Exact FEM</span>
+      <span class="ph-tag">SFD + BMD + δ</span>
+      <span class="ph-tag">Matrix Output</span>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results" style="display:none">
+
+    <div class="tabs-bar">
+      <div class="tab-btn active" onclick="switchTab('diagrams',this)">Diagrams</div>
+      <div class="tab-btn" onclick="switchTab('matrices',this)">Matrices</div>
+      <div class="tab-btn" onclick="switchTab('reactions',this)">Reactions</div>
+      <div class="tab-btn" onclick="switchTab('summary',this)">Summary</div>
+    </div>
+
+    <!-- ── TAB: DIAGRAMS ── -->
+    <div class="tab-content active" id="tab-diagrams">
+      <div class="sec-title">Beam Schematic</div>
+      <div class="beam-svg-card">
+        <svg id="beam-svg" width="100%" height="110"></svg>
+      </div>
+
+      <div class="sec-title">Shear Force Diagram</div>
+      <div class="card">
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#4fd6f7"></div>V(x) kN</div>
+        </div>
+        <div class="chart-wrap"><canvas id="chart-sfd" role="img" aria-label="Shear Force Diagram"></canvas></div>
+      </div>
+
+      <div class="sec-title">Bending Moment Diagram</div>
+      <div class="card">
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#30c97a"></div>M(x) kNm</div>
+        </div>
+        <div class="chart-wrap"><canvas id="chart-bmd" role="img" aria-label="Bending Moment Diagram"></canvas></div>
+      </div>
+
+      <div class="sec-title">Deflection Curve</div>
+      <div class="card">
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#f7b94f"></div>δ(x) — relative units (1/EI)</div>
+        </div>
+        <div class="chart-wrap"><canvas id="chart-def" role="img" aria-label="Deflection Curve"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ── TAB: MATRICES ── -->
+    <div class="tab-content" id="tab-matrices">
+      <div class="sec-title">Automated DOF Numbering</div>
+      <div class="card">
+        <table class="eng-table" id="dof-table"></table>
+      </div>
+
+      <div class="sec-title">Fixed End Moments (FEM)</div>
+      <div class="card">
+        <table class="eng-table" id="fem-table"></table>
+      </div>
+
+      <div class="sec-title">Member End Forces  [V_L · M_L · V_R · M_R]</div>
+      <div class="card">
+        <table class="eng-table" id="mef-table"></table>
+      </div>
+
+      <div class="sec-title">Unrestrained Displacements</div>
+      <div class="disp-grid" id="disp-grid"></div>
+    </div>
+
+    <!-- ── TAB: REACTIONS ── -->
+    <div class="tab-content" id="tab-reactions">
+      <div class="sec-title">Support Reactions</div>
+      <div class="rxn-grid" id="rxn-grid"></div>
+      <div class="sec-title" style="margin-top:8px">Equilibrium Check</div>
+      <div class="card" id="equil-card"></div>
+    </div>
+
+    <!-- ── TAB: SUMMARY ── -->
+    <div class="tab-content" id="tab-summary">
+      <div class="sec-title">System Statistics</div>
+      <div class="stat-grid" id="stat-grid"></div>
+      <div class="sec-title">Critical Values</div>
+      <div class="rxn-grid" id="crit-grid"></div>
+    </div>
+
+  </div><!-- /results -->
+</main>
+</div><!-- /module-beam -->
+
+<!-- ══════════════════════════════════════════════════════════
+     2D ORTHOGONAL FRAME MODULE
+══════════════════════════════════════════════════════════ -->
+<div id="module-frame" class="workspace" style="display:none">
+
+<aside class="sidebar">
+
+  <!-- NODES -->
+  <div class="panel">
+    <div class="panel-hdr">Nodes &amp; Coordinates</div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:8px;line-height:1.6">Each node: ID, X (m), Y (m)</div>
+    <div class="load-hdr" style="grid-template-columns:32px 1fr 1fr 30px">
+      <span>N</span><span>X (m)</span><span>Y (m)</span><span></span>
+    </div>
+    <div id="fr-nodes"></div>
+    <button class="btn-add" onclick="frAddNode()">＋ Add Node</button>
+  </div>
+
+  <!-- ELEMENTS -->
+  <div class="panel">
+    <div class="panel-hdr">Elements</div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:8px;line-height:1.6">Node i → j · E · A · I (relative)</div>
+    <div class="load-hdr" style="grid-template-columns:28px 34px 34px 1fr 1fr 1fr 30px">
+      <span>#</span><span>Ni</span><span>Nj</span><span>E</span><span>A</span><span>I</span><span></span>
+    </div>
+    <div id="fr-elems"></div>
+    <button class="btn-add" onclick="frAddElem()">＋ Add Element</button>
+  </div>
+
+  <!-- SUPPORTS -->
+  <div class="panel">
+    <div class="panel-hdr">Support Conditions</div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:8px;line-height:1.6">Check DOFs to restrain per node</div>
+    <div id="fr-supports"></div>
+    <button class="btn-add" onclick="frAddSupport()">＋ Add Support</button>
+  </div>
+
+  <!-- SPAN LOADS -->
+  <div class="panel">
+    <div class="panel-hdr">Member Loads (Local Axis)</div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:6px;line-height:1.6">–ve mag = load acts against local +Y (downward for horizontal members)</div>
+    <div class="load-hdr" style="grid-template-columns:30px 1fr 60px 58px 30px">
+      <span>Elem</span><span>Type</span><span>Mag</span><span>Dist a</span><span></span>
+    </div>
+    <div id="fr-span-loads"></div>
+    <button class="btn-add" onclick="frAddSpanLoad()">＋ Add Member Load</button>
+  </div>
+
+  <!-- NODAL LOADS -->
+  <div class="panel">
+    <div class="panel-hdr">Nodal Loads (Global)</div>
+    <div class="nodal-hdr" style="grid-template-columns:32px 1fr 1fr 1fr 30px">
+      <span>Node</span><span>Fx (kN)</span><span>Fy (kN)</span><span>Mz (kNm)</span><span></span>
+    </div>
+    <div id="fr-nodal-loads"></div>
+    <button class="btn-add" onclick="frAddNodalLoad()">＋ Add Nodal Load</button>
+  </div>
+
+  <div class="solve-panel" style="margin-top:auto">
+    <button class="btn-solve" onclick="frSolve()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Analyze Frame
+    </button>
+    <div class="err-msg" id="fr-err-msg"></div>
+  </div>
+
+</aside>
+
+<main class="main">
+  <!-- PLACEHOLDER -->
+  <div class="placeholder" id="fr-placeholder">
+    <div class="ph-hex">⬡</div>
+    <div class="ph-title">2D Orthogonal Frame Solver</div>
+    <div class="ph-sub">
+      Define nodes, elements, supports and loads. Solver uses the direct stiffness method with full 3-DOF per node (u, v, θ). Handles any planar frame — portals, multi-bay, multi-storey.
+    </div>
+    <div class="ph-tags">
+      <span class="ph-tag">3-DOF/Node</span>
+      <span class="ph-tag">6 Load Types</span>
+      <span class="ph-tag">Local→Global T</span>
+      <span class="ph-tag">SFD + BMD</span>
+      <span class="ph-tag">Reactions</span>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="fr-results" style="display:none">
+    <div class="tabs-bar">
+      <div class="tab-btn active" onclick="frSwitchTab('schematic',this)">Schematic</div>
+      <div class="tab-btn" onclick="frSwitchTab('diagrams',this)">SFD / BMD</div>
+      <div class="tab-btn" onclick="frSwitchTab('matrices',this)">Results</div>
+      <div class="tab-btn" onclick="frSwitchTab('reactions',this)">Reactions</div>
+    </div>
+
+    <!-- SCHEMATIC TAB -->
+    <div class="tab-content active" id="fr-tab-schematic">
+      <div class="sec-title">Frame Schematic</div>
+      <div class="beam-svg-card" style="min-height:460px;padding:10px 12px">
+        <svg id="fr-svg" width="100%" height="460" viewBox="0 0 860 460" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <div class="sec-title" style="margin-top:8px">Deflected Shape <span id="fr-amp-label" style="font-size:9px;color:var(--text3);letter-spacing:.5px;text-transform:none;font-weight:400"></span></div>
+      <div class="beam-svg-card" style="min-height:360px;padding:10px 12px">
+        <svg id="fr-def-svg" width="100%" height="360" viewBox="0 0 860 360" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+    </div>
+
+    <!-- SFD/BMD COMBINED TAB -->
+    <div class="tab-content" id="fr-tab-diagrams">
+      <div class="sec-title">Shear Force Diagram — Full Frame</div>
+      <div class="beam-svg-card" style="min-height:320px;padding:10px 12px">
+        <svg id="fr-sfd-svg" width="100%" height="320" viewBox="0 0 860 320" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <div class="sec-title" style="margin-top:8px">Bending Moment Diagram — Full Frame</div>
+      <div class="beam-svg-card" style="min-height:320px;padding:10px 12px">
+        <svg id="fr-bmd-svg" width="100%" height="320" viewBox="0 0 860 320" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <div id="fr-chart-container" style="margin-top:4px"></div>
+    </div>
+
+    <!-- RESULTS TAB -->
+    <div class="tab-content" id="fr-tab-matrices">
+      <div class="sec-title">Member End Forces</div>
+      <div class="card"><table class="eng-table" id="fr-mef-table"></table></div>
+      <div class="sec-title">Fixed End Forces (FEM)</div>
+      <div class="card"><table class="eng-table" id="fr-fem-table"></table></div>
+      <div class="sec-title">Nodal Displacements</div>
+      <div class="disp-grid" id="fr-disp-grid"></div>
+    </div>
+
+    <!-- REACTIONS TAB -->
+    <div class="tab-content" id="fr-tab-reactions">
+      <div class="sec-title">Support Reactions</div>
+      <div class="rxn-grid" id="fr-rxn-grid"></div>
+      <div class="sec-title" style="margin-top:8px">Equilibrium Check</div>
+      <div class="card" id="fr-equil-card"></div>
+    </div>
+  </div>
+</main>
+
+</div><!-- /module-frame -->
+
+<div id="tooltip"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let supports = [1,1,0];
+let spanLoads = [[1,1,5,2]];
+let nodalLoads = [[3,30,0]];
+let charts = {};
+
+const LOAD_TYPES = [
+  {v:1, label:'UDL'},
+  {v:2, label:'Point Load'},
+  {v:3, label:'UVL Left Peak'},
+  {v:4, label:'UVL Sym Peak'},
+  {v:5, label:'Conc. Moment'},
+  {v:6, label:'UVL Right Peak'}
+];
+
+const SUP_LABELS = ['Free (Overhang)','Pin / Roller','Fixed'];
+const SUP_SHORT  = ['Free','Pin','Fixed'];
+const SUP_CLS    = ['s0','s1','s2'];
+const SUP_ORDER  = [1,2,0]; // cycle order
+
+// ═══════════════════════════════════════════════
+// GEOMETRY BUILDER
+// ═══════════════════════════════════════════════
+function rebuildGeometry(){
+  const n = Math.min(Math.max(parseInt(document.getElementById('n-spans').value)||2, 1), 10);
+  while(supports.length < n+1) supports.push(1);
+  supports = supports.slice(0, n+1);
+
+  let html = '';
+  for(let i=0;i<n;i++){
+    const lv = i < 2 ? [4,3][i] : 4;
+    html += `<div class="row2" style="margin-top:10px">
+      <div><label>L[${i+1}] &nbsp;(m)</label>
+        <input type="number" id="L${i}" value="${lv}" step="0.1" min="0.1"></div>
+      <div><label>EI[${i+1}] &nbsp;(rel.)</label>
+        <input type="number" id="I${i}" value="1" step="0.1" min="0.01"></div>
+    </div>`;
+  }
+  document.getElementById('span-inputs').innerHTML = html;
+  buildSupportGrid(n);
+  // clamp existing nodal loads to valid node range, then re-render dropdown
+  nodalLoads.forEach(ld=>{ if(ld[0]>n+1) ld[0]=n+1; });
+  renderNodalLoads();
+  spanLoads.forEach(ld=>{ if(ld[0]>n) ld[0]=n; });
+  renderSpanLoads();
+}
+
+function buildSupportGrid(n){
+  let html = '';
+  for(let i=0;i<=n;i++){
+    const s = supports[i];
+    const ci = [0,1,2].indexOf(s < 0 ? 0 : (s > 2 ? 2 : s));
+    // remap: 0→Free, 1→Pin, 2→Fixed → index in SUP_ORDER array
+    const idx = s === 1 ? 0 : s === 2 ? 1 : 2; // display: Pin=0,Fixed=1,Free=2 (cls s1,s2,s0)
+    const cls = s===1?'s1':s===2?'s2':'s0';
+    const lbl = s===1?'Pin':s===2?'Fixed':'Free';
+    html += `<button class="sup-btn ${cls}" onclick="cycleSup(${i})" title="${SUP_LABELS[s]||'Free'}">N${i+1}: ${lbl}</button>`;
+  }
+  document.getElementById('support-grid').innerHTML = html;
+}
+
+function cycleSup(i){
+  const cur = supports[i];
+  supports[i] = cur===1 ? 2 : cur===2 ? 0 : 1;
+  const n = parseInt(document.getElementById('n-spans').value)||2;
+  buildSupportGrid(n);
+}
+
+// ═══════════════════════════════════════════════
+// LOAD ROWS
+// ═══════════════════════════════════════════════
+function renderSpanLoads(){
+  const n = Math.min(Math.max(parseInt(document.getElementById('n-spans').value)||2,1),10);
+  let html = '';
+  spanLoads.forEach((ld,i)=>{
+    const spanOpts = Array.from({length:n},(_,k)=>
+      `<option value="${k+1}"${ld[0]===k+1?' selected':''}>S${k+1}</option>`
+    ).join('');
+    const typeOpts = LOAD_TYPES.map(t=>`<option value="${t.v}"${ld[1]===t.v?' selected':''}>${t.label}</option>`).join('');
+    html += `<div class="load-row">
+      <select style="padding:5px 4px;font-size:11px" onchange="spanLoads[${i}][0]=+this.value">${spanOpts}</select>
+      <select oninput="spanLoads[${i}][1]=+this.value">${typeOpts}</select>
+      <input type="number" value="${ld[2]}" step="0.5" placeholder="Mag" oninput="spanLoads[${i}][2]=+this.value">
+      <input type="number" value="${ld[3]}" step="0.1" placeholder="Dist" oninput="spanLoads[${i}][3]=+this.value">
+      <button class="btn-del" onclick="spanLoads.splice(${i},1);renderSpanLoads()" title="Remove">✕</button>
+    </div>`;
+  });
+  document.getElementById('span-loads').innerHTML = html;
+}
+
+function addSpanLoad(){
+  spanLoads.push([1,1,10,0]);
+  renderSpanLoads();
+}
+
+function renderNodalLoads(){
+  const n = Math.min(Math.max(parseInt(document.getElementById('n-spans').value)||2,1),10);
+  const totalNodes = n+1;
+  let html = '';
+  nodalLoads.forEach((ld,i)=>{
+    // Build dropdown with N1…N(n+1)
+    const nodeOpts = Array.from({length:totalNodes},(_,k)=>
+      `<option value="${k+1}"${ld[0]===k+1?' selected':''}>N${k+1}</option>`
+    ).join('');
+    html += `<div class="nodal-row">
+      <select style="padding:5px 4px;font-size:11px" onchange="nodalLoads[${i}][0]=+this.value">${nodeOpts}</select>
+      <input type="number" value="${ld[1]}" step="1" placeholder="0" oninput="nodalLoads[${i}][1]=+this.value">
+      <input type="number" value="${ld[2]}" step="1" placeholder="0" oninput="nodalLoads[${i}][2]=+this.value">
+      <button class="btn-del" onclick="nodalLoads.splice(${i},1);renderNodalLoads()" title="Remove">✕</button>
+    </div>`;
+  });
+  document.getElementById('nodal-loads').innerHTML = html;
+}
+
+function addNodalLoad(){
+  nodalLoads.push([1,0,0]);
+  renderNodalLoads();
+}
+
+// ═══════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════
+function switchTab(name, el){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════
+// MATH HELPERS
+// ═══════════════════════════════════════════════
+function matInv(A){
+  const n=A.length;
+  const M=A.map(r=>[...r]);
+  const I=Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>+(i===j)));
+  for(let col=0;col<n;col++){
+    let mx=col, mv=Math.abs(M[col][col]);
+    for(let r=col+1;r<n;r++) if(Math.abs(M[r][col])>mv){mv=Math.abs(M[r][col]);mx=r;}
+    [M[col],M[mx]]=[M[mx],M[col]]; [I[col],I[mx]]=[I[mx],I[col]];
+    const piv=M[col][col];
+    if(Math.abs(piv)<1e-14) return null;
+    for(let j=0;j<n;j++){M[col][j]/=piv; I[col][j]/=piv;}
+    for(let r=0;r<n;r++){
+      if(r===col) continue;
+      const f=M[r][col];
+      for(let j=0;j<n;j++){M[r][j]-=f*M[col][j]; I[r][j]-=f*I[col][j];}
+    }
+  }
+  return I;
+}
+function matVec(A,b){return A.map(row=>row.reduce((s,v,j)=>s+v*b[j],0));}
+function f4(v){return +v.toFixed(4);}
+function fmtNum(v){return v===0?'0.0000':v.toFixed(4);}
+
+// ═══════════════════════════════════════════════
+// CORE SOLVER (faithful port of MATLAB code)
+// ═══════════════════════════════════════════════
+function solve(){
+  const errEl = document.getElementById('err-msg');
+  errEl.style.display='none';
+
+  const n = Math.min(Math.max(parseInt(document.getElementById('n-spans').value)||2,1),10);
+  const L=[],EI=[];
+  for(let i=0;i<n;i++){
+    L.push(parseFloat(document.getElementById('L'+i).value)||4);
+    EI.push(parseFloat(document.getElementById('I'+i).value)||1);
+  }
+
+  // Validation
+  const nFixed=supports.filter(s=>s===2).length;
+  const nPin=supports.filter(s=>s===1).length;
+  if(nFixed+nPin < 2){
+    errEl.textContent='Need at least 2 Pin/Fixed supports for stability.';
+    errEl.style.display='block'; return;
+  }
+
+  // ── 1. DOF NUMBERING ──
+  const nd = Array.from({length:n+1},()=>[0,0]); // [vertical, rotation]
+  let curr_uu=1;
+  for(let i=0;i<=n;i++){
+    if(supports[i]===0){nd[i][1]=curr_uu++;nd[i][0]=curr_uu++;}
+    else if(supports[i]===1){nd[i][1]=curr_uu++;}
+  }
+  const uu=curr_uu-1;
+  let curr_ur=uu+1;
+  for(let i=0;i<=n;i++){
+    if(supports[i]===1){nd[i][0]=curr_ur++;}
+    else if(supports[i]===2){nd[i][1]=curr_ur++;nd[i][0]=curr_ur++;}
+  }
+  const ur=curr_ur-uu-1;
+  const dof=uu+ur;
+
+  // Connectivity [v_left, r_left, v_right, r_right]
+  const lc=[];
+  for(let i=0;i<n;i++) lc.push([nd[i][0],nd[i][1],nd[i+1][0],nd[i+1][1]]);
+
+  // ── 2. FEM ──
+  const FEM=Array.from({length:n},()=>[0,0,0,0]);
+  spanLoads.forEach(ld=>{
+    const si=ld[0]-1; if(si<0||si>=n) return;
+    const type=ld[1],mag=ld[2],a=ld[3],Ls=L[si];
+    if(type===1){
+      const V=mag*Ls/2,M=mag*Ls*Ls/12;
+      FEM[si][0]+=V; FEM[si][1]+=M; FEM[si][2]+=V; FEM[si][3]-=M;
+    } else if(type===2){
+      const b=Ls-a;
+      const VL=mag*b*b*(3*a+b)/Math.pow(Ls,3);
+      const VR=mag*a*a*(a+3*b)/Math.pow(Ls,3);
+      const ML=mag*a*b*b/Math.pow(Ls,2);
+      const MR=-mag*a*a*b/Math.pow(Ls,2);
+      FEM[si][0]+=VL; FEM[si][1]+=ML; FEM[si][2]+=VR; FEM[si][3]+=MR;
+    } else if(type===3){
+      const VL=0.35*mag*Ls,VR=0.15*mag*Ls;
+      const ML=mag*Ls*Ls/20,MR=-mag*Ls*Ls/30;
+      FEM[si][0]+=VL; FEM[si][1]+=ML; FEM[si][2]+=VR; FEM[si][3]+=MR;
+    } else if(type===4){
+      const VL=mag*Ls/4,VR=mag*Ls/4;
+      const ML=5*mag*Ls*Ls/96,MR=-5*mag*Ls*Ls/96;
+      FEM[si][0]+=VL; FEM[si][1]+=ML; FEM[si][2]+=VR; FEM[si][3]+=MR;
+    } else if(type===5){
+      const b=Ls-a;
+      const ML=mag*b*(b-2*a)/(Ls*Ls);
+      const MR_=mag*a*(2*b-a)/(Ls*Ls);
+      const VL=(ML+MR_+mag)/Ls,VR=-VL;
+      FEM[si][0]+=VL; FEM[si][1]+=ML; FEM[si][2]+=VR; FEM[si][3]+=MR_;
+    } else if(type===6){
+      const VL=0.15*mag*Ls,VR=0.35*mag*Ls;
+      const ML=mag*Ls*Ls/30,MR=-mag*Ls*Ls/20;
+      FEM[si][0]+=VL; FEM[si][1]+=ML; FEM[si][2]+=VR; FEM[si][3]+=MR;
+    }
+  });
+
+  // ── 3. JOINT LOAD VECTOR ──
+  const jl=new Array(dof+1).fill(0);
+  for(let i=0;i<n;i++) for(let p=0;p<4;p++) jl[lc[i][p]]-=FEM[i][p];
+  nodalLoads.forEach(ld=>{
+    const ni=ld[0]-1; if(ni<0||ni>n) return;
+    const vd=nd[ni][0],rd=nd[ni][1];
+    if(vd>0&&vd<=uu) jl[vd]+=ld[1];
+    if(rd>0&&rd<=uu) jl[rd]+=ld[2];
+  });
+  const jlu=jl.slice(1,uu+1);
+
+  // ── 4. STIFFNESS MATRIX ──
+  const Ktot=Array.from({length:dof},()=>new Array(dof).fill(0));
+  const Kgs=[];
+  for(let i=0;i<n;i++){
+    const Li=L[i],Ii=EI[i];
+    const rc1=4*Ii/Li,rc2=2*Ii/Li;
+    const k12=12*Ii/(Li*Li*Li),k6=6*Ii/(Li*Li);
+    const K=[
+      [k12, k6,  -k12, k6 ],
+      [k6,  rc1, -k6,  rc2],
+      [-k12,-k6,  k12, -k6],
+      [k6,  rc2, -k6,  rc1]
+    ];
+    Kgs.push(K);
+    for(let p=0;p<4;p++) for(let q=0;q<4;q++){
+      Ktot[lc[i][p]-1][lc[i][q]-1]+=K[p][q];
+    }
+  }
+
+  // ── 5. SOLVE ──
+  const Kuu=Ktot.slice(0,uu).map(r=>r.slice(0,uu));
+  const KuuInv=matInv(Kuu);
+  if(!KuuInv){
+    errEl.textContent='Singular stiffness matrix — structure is unstable or over-released. Check supports.';
+    errEl.style.display='block'; return;
+  }
+  const delu=matVec(KuuInv,jlu);
+  const del=[0,...delu,...new Array(ur).fill(0)];
+
+  // ── 6. MEMBER END FORCES ──
+  const mbar=[];
+  for(let i=0;i<n;i++){
+    const deli=lc[i].map(d=>del[d]);
+    const row=Kgs[i].map((r,p)=>r.reduce((s,v,q)=>s+v*deli[q],0)+FEM[i][p]);
+    mbar.push(row);
+  }
+
+  // ── 7. REACTIONS ──
+  const jf=new Array(dof+1).fill(0);
+  for(let i=0;i<n;i++) for(let p=0;p<4;p++) jf[lc[i][p]]+=mbar[i][p];
+  const reactions=[];
+  for(let i=0;i<=n;i++){
+    if(supports[i]>0){
+      reactions.push({node:i+1,type:'V',val:jf[nd[i][0]]});
+      if(supports[i]===2) reactions.push({node:i+1,type:'M',val:jf[nd[i][1]]});
+    }
+  }
+
+  // ── 8. DIAGRAM DATA (100 pts per span) ──
+  const PTS=120;
+  const Xg=[],Vg=[],Mg=[],Dg=[];
+  let cx=0;
+  for(let i=0;i<n;i++){
+    const Li=L[i];
+    for(let k=0;k<=PTS;k++){
+      const x=k*Li/PTS;
+      let V=mbar[i][0], M=-mbar[i][1]+mbar[i][0]*x;
+      spanLoads.forEach(ld=>{
+        if(ld[0]-1!==i) return;
+        const type=ld[1],mag=ld[2],a=ld[3];
+        if(type===1){V-=mag*x; M-=mag*x*x/2;}
+        else if(type===2){if(x>a){V-=mag; M-=mag*(x-a);}}
+        else if(type===3){V-=mag*(x-x*x/(2*Li)); M-=mag*(x*x/2-x*x*x/(6*Li));}
+        else if(type===4){
+          if(x<=Li/2){V-=mag*x*x/Li; M-=mag*x*x*x/(3*Li);}
+          else{V-=mag*(2*x-x*x/Li-Li/2); M-=mag*(x*x-x*x*x/(3*Li)-x*Li/2+Li*Li/12);}
+        }
+        else if(type===5){if(x>a) M-=mag;}
+        else if(type===6){V-=mag*x*x/(2*Li); M-=mag*x*x*x/(6*Li);}
+      });
+      // Hermite cubic deflection
+      const dL=del[nd[i][0]],tL=del[nd[i][1]],dR=del[nd[i+1][0]],tR=del[nd[i+1][1]];
+      const xi=x/Li;
+      const def=(1-3*xi*xi+2*xi*xi*xi)*dL+(xi-2*xi*xi+xi*xi*xi)*Li*tL
+               +(3*xi*xi-2*xi*xi*xi)*dR+(-xi*xi+xi*xi*xi)*Li*tR;
+      Xg.push(f4(cx+x)); Vg.push(f4(V)); Mg.push(f4(M)); Dg.push(+def.toFixed(8));
+    }
+    cx+=Li;
+  }
+
+  // ══════════════════════════════════
+  // RENDER
+  // ══════════════════════════════════
+  renderBeamSVG(n,L,supports,mbar,nd);
+  renderCharts(Xg,Vg,Mg,Dg,n,L);
+  renderMatrices(n,nd,FEM,mbar,delu,uu);
+  renderReactions(reactions,Vg,Mg);
+  renderSummary(n,dof,uu,ur,reactions,Vg,Mg,Dg,L);
+
+  document.getElementById('placeholder').style.display='none';
+  document.getElementById('results').style.display='block';
+}
+
+// ═══════════════════════════════════════════════
+// BEAM SVG  — fixed viewBox-based rendering
+// ═══════════════════════════════════════════════
+function renderBeamSVG(n,L,sups,mbar,nd){
+  const svg=document.getElementById('beam-svg');
+  const VW=900, VH=240;
+  const totalL=L.reduce((a,b)=>a+b,0);
+  const PAD=60;
+  const scale=(VW-PAD*2)/totalL;
+  const yb=130; // beam y — more space above for loads
+  let els='';
+
+  // ── defs for arrowheads (all colours we use) ──
+  const arrColors=['#f7b94f','#f75f5f','#a87fff','#4fd6f7','#30c97a','#30c97a'];
+  let defs='<defs>';
+  arrColors.forEach(c=>{
+    defs+=`<marker id="arr${c.slice(1)}" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="${c}"/>
+    </marker>`;
+    // also upward variant
+    defs+=`<marker id="arrup${c.slice(1)}" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto-start-reverse">
+      <path d="M0,0 L8,4 L0,8 Z" fill="${c}"/>
+    </marker>`;
+  });
+  defs+='</defs>';
+
+  // ── x-axis baseline (dashed) ──
+  els+=`<line x1="${PAD-10}" y1="${yb}" x2="${PAD+totalL*scale+10}" y2="${yb}" stroke="#232a40" stroke-width="1" stroke-dasharray="4,4"/>`;
+
+  // ── SPAN SEGMENTS + SPAN LOADS ──
+  let cx=PAD;
+  for(let i=0;i<n;i++){
+    const w=L[i]*scale;
+    const x0=cx, x1=cx+w;
+
+    // beam line
+    els+=`<line x1="${x0}" y1="${yb}" x2="${x1}" y2="${yb}" stroke="#4f8ef7" stroke-width="7" stroke-linecap="round"/>`;
+    // span label
+    els+=`<text x="${x0+w/2}" y="${yb+80}" text-anchor="middle" fill="#3a4870" font-size="11" font-family="JetBrains Mono,monospace">L${i+1}=${L[i]}m</text>`;
+
+    // span loads
+    spanLoads.forEach(ld=>{
+      if(ld[0]-1!==i) return;
+      const type=ld[1], mag=ld[2], a=ld[3];
+      const col=arrColors[(type-1)%6];
+      const mid=x0+w/2;
+
+      if(type===1){
+        // UDL: top bar + downward arrows + label
+        const nArr=Math.max(4,Math.round(w/50));
+        els+=`<line x1="${x0+2}" y1="${yb-44}" x2="${x1-2}" y2="${yb-44}" stroke="${col}" stroke-width="1.5"/>`;
+        for(let k=0;k<=nArr;k++){
+          const ax=x0+2+k*((w-4)/nArr);
+          els+=`<line x1="${ax}" y1="${yb-44}" x2="${ax}" y2="${yb-6}" stroke="${col}" stroke-width="1.5" marker-end="url(#arr${col.slice(1)})"/>`;
+        }
+        els+=`<text x="${mid}" y="${yb-50}" text-anchor="middle" fill="${col}" font-size="10" font-family="JetBrains Mono,monospace" font-weight="500">${mag} kN/m</text>`;
+
+      } else if(type===2){
+        // Point load: single arrow at position a
+        const ax=x0+(a/L[i])*w;
+        els+=`<line x1="${ax}" y1="${yb-50}" x2="${ax}" y2="${yb-6}" stroke="${col}" stroke-width="2.5" marker-end="url(#arr${col.slice(1)})"/>`;
+        els+=`<text x="${ax}" y="${yb-56}" text-anchor="middle" fill="${col}" font-size="10" font-family="JetBrains Mono,monospace" font-weight="500">${mag} kN</text>`;
+
+      } else if(type===3){
+        // UVL left peak: triangle with arrows, tall on left, zero on right
+        const nArr=5;
+        for(let k=0;k<=nArr;k++){
+          const ax=x0+k*(w/nArr);
+          const h=40*(1-k/nArr);
+          if(h>2) els+=`<line x1="${ax}" y1="${yb-h-4}" x2="${ax}" y2="${yb-4}" stroke="${col}" stroke-width="1.5" marker-end="url(#arr${col.slice(1)})"/>`;
+        }
+        els+=`<polyline points="${x0},${yb-44} ${x1},${yb-4}" fill="none" stroke="${col}" stroke-width="1.5"/>`;
+        els+=`<text x="${x0+10}" y="${yb-50}" fill="${col}" font-size="10" font-family="JetBrains Mono,monospace" font-weight="500">${mag}kN/m</text>`;
+
+      } else if(type===4){
+        // UVL symmetric: triangle arrows, max at centre
+        const nArr=6;
+        for(let k=0;k<=nArr;k++){
+          const ax=x0+k*(w/nArr);
+          const xi=k/nArr;
+          const h=xi<=0.5?40*(xi*2):40*((1-xi)*2);
+          if(h>2) els+=`<line x1="${ax}" y1="${yb-h-4}" x2="${ax}" y2="${yb-4}" stroke="${col}" stroke-width="1.5" marker-end="url(#arr${col.slice(1)})"/>`;
+        }
+        els+=`<polyline points="${x0},${yb-4} ${mid},${yb-44} ${x1},${yb-4}" fill="none" stroke="${col}" stroke-width="1.5"/>`;
+        els+=`<text x="${mid}" y="${yb-50}" text-anchor="middle" fill="${col}" font-size="10" font-family="JetBrains Mono,monospace" font-weight="500">${mag}kN/m</text>`;
+
+      } else if(type===5){
+        // Concentrated moment at position a
+        const mx=x0+(a/L[i])*w;
+        els+=`<path d="M${mx-14},${yb-28} A14,14 0 1 1 ${mx+14},${yb-28}" fill="none" stroke="${col}" stroke-width="2" marker-end="url(#arr${col.slice(1)})"/>`;
+        els+=`<text x="${mx}" y="${yb-50}" text-anchor="middle" fill="${col}" font-size="10" font-family="JetBrains Mono,monospace" font-weight="500">${mag} kNm</text>`;
+
+      } else if(type===6){
+        // UVL right peak: zero on left, tall on right
+        const nArr=5;
+        for(let k=0;k<=nArr;k++){
+          const ax=x0+k*(w/nArr);
+          const h=40*(k/nArr);
+          if(h>2) els+=`<line x1="${ax}" y1="${yb-h-4}" x2="${ax}" y2="${yb-4}" stroke="${col}" stroke-width="1.5" marker-end="url(#arr${col.slice(1)})"/>`;
+        }
+        els+=`<polyline points="${x0},${yb-4} ${x1},${yb-44}" fill="none" stroke="${col}" stroke-width="1.5"/>`;
+        els+=`<text x="${x1-10}" y="${yb-50}" text-anchor="end" fill="${col}" font-size="10" font-family="JetBrains Mono,monospace" font-weight="500">${mag}kN/m</text>`;
+      }
+    });
+
+    cx+=w;
+  }
+
+  // ── NODAL LOADS ──
+  nodalLoads.forEach(ld=>{
+    const ni=ld[0]-1; if(ni<0||ni>n) return;
+    const Fy=ld[1], Mz=ld[2];
+    const x=PAD+L.slice(0,ni).reduce((a,b)=>a+b,0)*scale;
+    const colF='#30c97a'; // green for nodal force
+    const colM='#4fd6f7'; // cyan for nodal moment
+
+    let topY = yb - 8; // track topmost element for stacking labels
+
+    if(Fy!==0){
+      // +ve Fy = downward load (arrow pointing down, starting from above)
+      // -ve Fy = upward load (arrow pointing up, starting from below)
+      if(Fy>0){
+        // downward arrow: start above beam, tip at beam top
+        const arrowLen = 55;
+        const ay1 = yb - arrowLen - 8;
+        const ay2 = yb - 8; // tip near beam top
+        els+=`<line x1="${x}" y1="${ay1}" x2="${x}" y2="${ay2}" stroke="${colF}" stroke-width="2.5" marker-end="url(#arr${colF.slice(1)})"/>`;
+        // label above arrow start
+        const lx = x + 6, ly = ay1 - 5;
+        els+=`<rect x="${lx-2}" y="${ly-11}" width="${(String(Fy).length*6)+24}" height="13" rx="3" fill="#0c0e14" opacity="0.75"/>`;
+        els+=`<text x="${lx}" y="${ly}" fill="${colF}" font-size="10" font-family="JetBrains Mono,monospace" font-weight="600">▼ +${Fy} kN</text>`;
+        topY = Math.min(topY, ay1);
+      } else {
+        // upward arrow: start below beam, tip at beam bottom
+        const arrowLen = 55;
+        const ay1 = yb + 8;
+        const ay2 = yb + arrowLen + 8;
+        els+=`<line x1="${x}" y1="${ay2}" x2="${x}" y2="${ay1}" stroke="${colF}" stroke-width="2.5" marker-end="url(#arr${colF.slice(1)})"/>`;
+        // label below
+        els+=`<rect x="${x+4}" y="${ay2+2}" width="${(String(Fy).length*6)+24}" height="13" rx="3" fill="#0c0e14" opacity="0.75"/>`;
+        els+=`<text x="${x+6}" y="${ay2+13}" fill="${colF}" font-size="10" font-family="JetBrains Mono,monospace" font-weight="600">▲ ${Fy} kN</text>`;
+      }
+    }
+    if(Mz!==0){
+      // moment arc — draw above beam, offset left so it doesn't overlap force arrow
+      const mx = x;
+      const arcY = yb - 32;
+      const r = 16;
+      // CW arc if Mz>0, CCW if Mz<0
+      const sweep = Mz>0 ? 1 : 0;
+      els+=`<path d="M${mx-r},${arcY} A${r},${r} 0 1 ${sweep} ${mx+r},${arcY}" fill="none" stroke="${colM}" stroke-width="2.2" marker-end="url(#arr${colM.slice(1)})"/>`;
+      const lby = Fy!==0 && Fy>0 ? arcY-28 : arcY-14;
+      els+=`<rect x="${mx - 26}" y="${lby-11}" width="52" height="13" rx="3" fill="#0c0e14" opacity="0.75"/>`;
+      els+=`<text x="${mx}" y="${lby}" text-anchor="middle" fill="${colM}" font-size="10" font-family="JetBrains Mono,monospace" font-weight="600">${Mz>0?'↻':'↺'} ${Mz>0?'+':''}${Mz}kNm</text>`;
+    }
+
+    // "N#" indicator so it's clear which node the load is on
+    if(Fy!==0||Mz!==0){
+      els+=`<circle cx="${x}" cy="${yb}" r="5" fill="${colF}" opacity="0.3"/>`;
+      els+=`<circle cx="${x}" cy="${yb}" r="5" fill="none" stroke="${colF}" stroke-width="1.5"/>`;
+    }
+  });
+
+  // ── SUPPORTS + NODE LABELS ──
+  for(let i=0;i<=n;i++){
+    const x=PAD+L.slice(0,i).reduce((a,b)=>a+b,0)*scale;
+    if(sups[i]===1){
+      els+=`<polygon points="${x},${yb+2} ${x-11},${yb+24} ${x+11},${yb+24}" fill="none" stroke="#4f8ef7" stroke-width="2" stroke-linejoin="round"/>`;
+      els+=`<line x1="${x-16}" y1="${yb+26}" x2="${x+16}" y2="${yb+26}" stroke="#4f8ef7" stroke-width="2"/>`;
+      for(let g=0;g<4;g++) els+=`<line x1="${x-14+g*9}" y1="${yb+26}" x2="${x-19+g*9}" y2="${yb+33}" stroke="#4f8ef7" stroke-width="1.5"/>`;
+      els+=`<circle cx="${x}" cy="${yb+2}" r="3" fill="#4f8ef7"/>`;
+    } else if(sups[i]===2){
+      const side=i===0?-1:1;
+      els+=`<rect x="${x-8}" y="${yb-8}" width="16" height="18" rx="2" fill="none" stroke="#a87fff" stroke-width="2"/>`;
+      els+=`<rect x="${x+side*8}" y="${yb-12}" width="10" height="26" rx="2" fill="#a87fff" opacity=".2"/>`;
+      for(let g=0;g<4;g++) els+=`<line x1="${x+side*8}" y1="${yb-8+g*7}" x2="${x+side*17}" y2="${yb-2+g*7}" stroke="#a87fff" stroke-width="1.5"/>`;
+    } else {
+      els+=`<circle cx="${x}" cy="${yb}" r="7" fill="none" stroke="#f75f5f" stroke-width="2"/>`;
+      els+=`<text x="${x+12}" y="${yb+4}" fill="#f75f5f" font-size="9" font-family="JetBrains Mono,monospace">free</text>`;
+    }
+    // node label + coord
+    els+=`<text x="${x}" y="${yb+46}" text-anchor="middle" fill="#4a5680" font-size="11" font-family="JetBrains Mono,monospace">N${i+1}</text>`;
+    const xc=L.slice(0,i).reduce((a,b)=>a+b,0).toFixed(1);
+    els+=`<text x="${x}" y="${yb+60}" text-anchor="middle" fill="#2e3858" font-size="9" font-family="JetBrains Mono,monospace">${xc}m</text>`;
+  }
+
+  svg.innerHTML=defs+els;
+  svg.setAttribute('viewBox',`0 0 ${VW} ${VH}`);
+  svg.setAttribute('height','240');
+  svg.style.width='100%';
+}
+
+// ═══════════════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════════════
+function makeChartOpts(ylabel,color,fillAbove,fillBelow){
+  return {
+    responsive:true, maintainAspectRatio:false, animation:false,
+    plugins:{legend:{display:false},tooltip:{
+      backgroundColor:'#1e2438',borderColor:'#2e3858',borderWidth:1,
+      titleColor:'#8090c0',bodyColor:'#dde3f5',
+      titleFont:{family:'JetBrains Mono'},bodyFont:{family:'JetBrains Mono'},
+      callbacks:{label:c=>`${c.parsed.y.toFixed(3)} ${ylabel}`}
+    }},
+    scales:{
+      x:{ticks:{maxTicksLimit:12,color:'#4a5680',font:{family:'JetBrains Mono',size:10}},
+         grid:{color:'rgba(35,42,64,1)'},
+         title:{display:true,text:'x  (m)',color:'#4a5680',font:{size:11}}},
+      y:{ticks:{color:'#4a5680',font:{family:'JetBrains Mono',size:10},maxTicksLimit:8},
+         grid:{color:'rgba(35,42,64,1)'},
+         title:{display:true,text:ylabel,color:'#4a5680',font:{size:11}}}
+    }
+  };
+}
+
+function renderCharts(Xg,Vg,Mg,Dg,n,L){
+  ['sfd','bmd','def'].forEach(id=>{
+    if(charts[id]){charts[id].destroy();charts[id]=null;}
+  });
+  const mk=(id,data,color,ylab)=>new Chart(document.getElementById('chart-'+id),{
+    type:'line',
+    data:{labels:Xg,datasets:[{data,borderColor:color,borderWidth:1.5,pointRadius:0,
+      tension:0.2,
+      fill:{target:'origin',above:color+'20',below:color+'20'}}]},
+    options:makeChartOpts(ylab,color)
+  });
+  charts.sfd=mk('sfd',Vg,'#4fd6f7','V  (kN)');
+  charts.bmd=mk('bmd',Mg,'#30c97a','M  (kNm)');
+  charts.def=mk('def',Dg,'#f7b94f','δ  (1/EI)');
+}
+
+// ═══════════════════════════════════════════════
+// MATRICES
+// ═══════════════════════════════════════════════
+function fmtTd(v){
+  const n=+v.toFixed(4);
+  const cls=n>1e-6?'pos':n<-1e-6?'neg':'';
+  return `<td class="${cls}">${fmtNum(n)}</td>`;
+}
+
+function renderMatrices(n,nd,FEM,mbar,delu,uu){
+  // DOF table
+  let dt=`<tr><th>Node</th><th>Vertical DOF</th><th>Rotation DOF</th><th>Type</th></tr>`;
+  for(let i=0;i<=n;i++){
+    const t=supports[i]===1?'Pin':supports[i]===2?'Fixed':'Free';
+    dt+=`<tr><td>N${i+1}</td><td class="num">${nd[i][0]}</td><td class="num">${nd[i][1]}</td><td style="color:${supports[i]===1?'var(--accent)':supports[i]===2?'var(--purple)':'var(--red)'}">${t}</td></tr>`;
+  }
+  document.getElementById('dof-table').innerHTML=dt;
+
+  // FEM table
+  let ft=`<tr><th>Span</th><th>V_L</th><th>M_L</th><th>V_R</th><th>M_R</th></tr>`;
+  for(let i=0;i<n;i++) ft+=`<tr><td>S${i+1}</td>${FEM[i].map(fmtTd).join('')}</tr>`;
+  document.getElementById('fem-table').innerHTML=ft;
+
+  // Member end forces
+  let mt=`<tr><th>Span</th><th>V_L (kN)</th><th>M_L (kNm)</th><th>V_R (kN)</th><th>M_R (kNm)</th></tr>`;
+  for(let i=0;i<n;i++) mt+=`<tr><td>S${i+1}</td>${mbar[i].map(fmtTd).join('')}</tr>`;
+  document.getElementById('mef-table').innerHTML=mt;
+
+  // Displacements
+  let dg='';
+  for(let i=0;i<delu.length;i++){
+    const v=+delu[i].toFixed(6);
+    const col=Math.abs(v)>1e-10?'var(--cyan)':'var(--text3)';
+    dg+=`<div class="disp-card"><div class="disp-dof">DOF ${i+1}</div><div class="disp-val" style="color:${col}">${v.toFixed(6)}</div></div>`;
+  }
+  document.getElementById('disp-grid').innerHTML=dg;
+}
+
+// ═══════════════════════════════════════════════
+// REACTIONS
+// ═══════════════════════════════════════════════
+function renderReactions(reactions,Vg,Mg){
+  let html='';
+  reactions.forEach(r=>{
+    const v=+r.val.toFixed(3);
+    html+=`<div class="rxn-card">
+      <div class="rxn-label">Node ${r.node} — ${r.type==='V'?'Vertical Reaction':'Fixed Moment'}</div>
+      <div class="rxn-val ${v>=0?'pos':'neg'}">${v>=0?'+':''}${v}</div>
+      <div class="rxn-unit">${r.type==='V'?'kN':'kNm'}</div>
+    </div>`;
+  });
+  document.getElementById('rxn-grid').innerHTML=html;
+
+  // Equilibrium check
+  const sumV=reactions.filter(r=>r.type==='V').reduce((s,r)=>s+r.val,0);
+  const ok=Math.abs(sumV)<0.05;
+  document.getElementById('equil-card').innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:10px;height:10px;border-radius:50%;background:${ok?'var(--green)':'var(--red)'}"></div>
+      <div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:3px">ΣFy = <span style="font-family:var(--mono);color:${ok?'var(--green)':'var(--red)'}">${sumV.toFixed(4)} kN</span></div>
+        <div style="font-size:11px;color:var(--text3)">${ok?'Equilibrium satisfied ✓':'Warning: residual vertical force — check loads vs reactions'}</div>
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════
+// SUMMARY
+// ═══════════════════════════════════════════════
+function renderSummary(n,dof,uu,ur,reactions,Vg,Mg,Dg,L){
+  const totalL=L.reduce((a,b)=>a+b,0);
+  document.getElementById('stat-grid').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Spans</div><div class="stat-val">${n}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Length</div><div class="stat-val">${totalL.toFixed(2)} m</div></div>
+    <div class="stat-card"><div class="stat-label">Total DOF</div><div class="stat-val">${dof}</div></div>
+    <div class="stat-card"><div class="stat-label">Free DOF (uu)</div><div class="stat-val">${uu}</div></div>
+    <div class="stat-card"><div class="stat-label">Restrained (ur)</div><div class="stat-val">${ur}</div></div>
+    <div class="stat-card"><div class="stat-label">Reactions</div><div class="stat-val">${reactions.length}</div></div>`;
+
+  const maxV=Math.max(...Vg.map(Math.abs));
+  const maxM=Math.max(...Mg.map(Math.abs));
+  const maxD=Math.max(...Dg.map(Math.abs));
+  const xiMaxV=Vg.findIndex(v=>Math.abs(v)===maxV);
+  const xiMaxM=Mg.findIndex(v=>Math.abs(v)===maxM);
+
+  document.getElementById('crit-grid').innerHTML=`
+    <div class="rxn-card">
+      <div class="rxn-label">Max |V|</div>
+      <div class="rxn-val pos">${maxV.toFixed(3)}</div>
+      <div class="rxn-unit">kN</div>
+    </div>
+    <div class="rxn-card">
+      <div class="rxn-label">Max |M|</div>
+      <div class="rxn-val" style="color:var(--green)">${maxM.toFixed(3)}</div>
+      <div class="rxn-unit">kNm</div>
+    </div>
+    <div class="rxn-card">
+      <div class="rxn-label">Max |δ|</div>
+      <div class="rxn-val" style="color:var(--amber)">${maxD.toExponential(3)}</div>
+      <div class="rxn-unit">1/EI</div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════
+// MODULE SWITCHER
+// ═══════════════════════════════════════════════
+function switchModule(m){
+  ['beam','frame'].forEach(id=>{
+    document.getElementById('module-'+id).style.display = m===id?'flex':'none';
+    document.getElementById('pill-'+id).classList.toggle('active', m===id);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 2D ORTHOGONAL FRAME SOLVER STATE & DEFAULTS
+// ═══════════════════════════════════════════════════════════════
+let frNodes    = [[1,0,0],[2,0,4],[3,3,4],[4,3,0]];
+let frElems    = [[1,1,2,1,1e6,1],[2,2,3,1,1e6,1],[3,3,4,1,1e6,1]];
+let frSupports = [[1,1,1,0],[4,1,1,1]];
+let frSpanLoads= [[1,2,-40,2],[2,1,-25,0]];
+let frNodalLoads=[];
+let frCharts   = {};
+
+const FR_LOAD_TYPES=[
+  {v:1,label:'UDL'},{v:2,label:'Point Load'},
+  {v:3,label:'UVL Left Peak'},{v:4,label:'Sym Triangle'},
+  {v:5,label:'Conc. Moment'},{v:6,label:'UVL Right Peak'}
+];
+
+// ── UI RENDERERS ──────────────────────────────
+function frRenderNodes(){
+  let h='';
+  frNodes.forEach((nd,i)=>{
+    h+=`<div class="load-row" style="grid-template-columns:32px 1fr 1fr 30px;margin-bottom:5px">
+      <div style="font-size:11px;font-family:var(--mono);color:var(--text3);padding-top:7px">N${i+1}</div>
+      <input type="number" value="${nd[1]}" step="0.5" placeholder="X" oninput="frNodes[${i}][1]=+this.value;frUpdateSupportDropdowns()">
+      <input type="number" value="${nd[2]}" step="0.5" placeholder="Y" oninput="frNodes[${i}][2]=+this.value">
+      <button class="btn-del" onclick="frNodes.splice(${i},1);frNormalizeIDs();frRenderAll()" title="Remove">✕</button>
+    </div>`;
+  });
+  document.getElementById('fr-nodes').innerHTML=h;
+}
+
+function frNormalizeIDs(){
+  frNodes.forEach((nd,i)=>nd[0]=i+1);
+  const nn=frNodes.length;
+  frElems=frElems.filter(e=>e[1]<=nn&&e[2]<=nn);
+  frElems.forEach((e,i)=>e[0]=i+1);
+  frSupports=frSupports.filter(s=>s[0]<=nn);
+  frSpanLoads=frSpanLoads.filter(sl=>sl[0]<=frElems.length);
+  frNodalLoads=frNodalLoads.filter(nl=>nl[0]<=nn);
+}
+
+function frRenderElems(){
+  const nn=frNodes.length;
+  let h='';
+  frElems.forEach((el,i)=>{
+    const nOpts=frNodes.map((_,k)=>`<option value="${k+1}"${el[1]===k+1?' selected':''}>N${k+1}</option>`).join('');
+    const njOpts=frNodes.map((_,k)=>`<option value="${k+1}"${el[2]===k+1?' selected':''}>N${k+1}</option>`).join('');
+    h+=`<div class="load-row" style="grid-template-columns:28px 44px 44px 1fr 1fr 1fr 30px;margin-bottom:5px">
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);padding-top:7px">E${i+1}</div>
+      <select style="padding:4px 3px;font-size:10px" onchange="frElems[${i}][1]=+this.value">${nOpts}</select>
+      <select style="padding:4px 3px;font-size:10px" onchange="frElems[${i}][2]=+this.value">${njOpts}</select>
+      <input type="number" value="${el[3]}" step="0.1" min="0.01" placeholder="E" oninput="frElems[${i}][3]=+this.value" style="padding:5px 4px;font-size:10px">
+      <input type="number" value="${el[4]}" step="1" min="0.01" placeholder="A" oninput="frElems[${i}][4]=+this.value" style="padding:5px 4px;font-size:10px">
+      <input type="number" value="${el[5]}" step="0.1" min="0.001" placeholder="I" oninput="frElems[${i}][5]=+this.value" style="padding:5px 4px;font-size:10px">
+      <button class="btn-del" onclick="frElems.splice(${i},1);frElems.forEach((e,k)=>e[0]=k+1);frRenderAll()" title="Remove">✕</button>
+    </div>`;
+  });
+  document.getElementById('fr-elems').innerHTML=h;
+}
+
+function frRenderSupports(){
+  const nn=frNodes.length;
+  let h='';
+  frSupports.forEach((sp,i)=>{
+    const nOpts=frNodes.map((_,k)=>`<option value="${k+1}"${sp[0]===k+1?' selected':''}>N${k+1}</option>`).join('');
+    h+=`<div style="display:grid;grid-template-columns:60px 1fr 1fr 1fr 30px;gap:6px;align-items:center;margin-bottom:8px">
+      <select style="padding:5px 4px;font-size:11px" onchange="frSupports[${i}][0]=+this.value">${nOpts}</select>
+      <label style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;cursor:pointer">
+        <input type="checkbox" ${sp[1]?'checked':''} onchange="frSupports[${i}][1]=this.checked?1:0"> Fx
+      </label>
+      <label style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;cursor:pointer">
+        <input type="checkbox" ${sp[2]?'checked':''} onchange="frSupports[${i}][2]=this.checked?1:0"> Fy
+      </label>
+      <label style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;cursor:pointer">
+        <input type="checkbox" ${sp[3]?'checked':''} onchange="frSupports[${i}][3]=this.checked?1:0"> Mz
+      </label>
+      <button class="btn-del" onclick="frSupports.splice(${i},1);frRenderSupports()" title="Remove">✕</button>
+    </div>`;
+  });
+  document.getElementById('fr-supports').innerHTML=h;
+}
+
+function frUpdateSupportDropdowns(){ frRenderSupports(); frRenderElems(); frRenderSpanLoads(); frRenderNodalLoads(); }
+
+function frRenderSpanLoads(){
+  const ne=frElems.length;
+  let h='';
+  frSpanLoads.forEach((sl,i)=>{
+    const eOpts=frElems.map((_,k)=>`<option value="${k+1}"${sl[0]===k+1?' selected':''}>E${k+1}</option>`).join('');
+    const tOpts=FR_LOAD_TYPES.map(t=>`<option value="${t.v}"${sl[1]===t.v?' selected':''}>${t.label}</option>`).join('');
+    h+=`<div class="load-row" style="grid-template-columns:30px 1fr 60px 58px 30px">
+      <select style="padding:5px 3px;font-size:10px" onchange="frSpanLoads[${i}][0]=+this.value">${eOpts}</select>
+      <select oninput="frSpanLoads[${i}][1]=+this.value">${tOpts}</select>
+      <input type="number" value="${sl[2]}" step="1" placeholder="Mag" oninput="frSpanLoads[${i}][2]=+this.value">
+      <input type="number" value="${sl[3]}" step="0.1" placeholder="a(m)" oninput="frSpanLoads[${i}][3]=+this.value">
+      <button class="btn-del" onclick="frSpanLoads.splice(${i},1);frRenderSpanLoads()" title="Remove">✕</button>
+    </div>`;
+  });
+  document.getElementById('fr-span-loads').innerHTML=h;
+}
+
+function frRenderNodalLoads(){
+  let h='';
+  frNodalLoads.forEach((nl,i)=>{
+    const nOpts=frNodes.map((_,k)=>`<option value="${k+1}"${nl[0]===k+1?' selected':''}>N${k+1}</option>`).join('');
+    h+=`<div style="display:grid;grid-template-columns:36px 1fr 1fr 1fr 30px;gap:4px;align-items:center;margin-bottom:5px">
+      <select style="padding:5px 4px;font-size:11px" onchange="frNodalLoads[${i}][0]=+this.value">${nOpts}</select>
+      <input type="number" value="${nl[1]}" step="1" placeholder="Fx" oninput="frNodalLoads[${i}][1]=+this.value" style="padding:5px 7px;font-size:11px">
+      <input type="number" value="${nl[2]}" step="1" placeholder="Fy" oninput="frNodalLoads[${i}][2]=+this.value" style="padding:5px 7px;font-size:11px">
+      <input type="number" value="${nl[3]}" step="1" placeholder="Mz" oninput="frNodalLoads[${i}][3]=+this.value" style="padding:5px 7px;font-size:11px">
+      <button class="btn-del" onclick="frNodalLoads.splice(${i},1);frRenderNodalLoads()" title="Remove">✕</button>
+    </div>`;
+  });
+  document.getElementById('fr-nodal-loads').innerHTML=h;
+}
+
+function frRenderAll(){
+  frRenderNodes(); frRenderElems(); frRenderSupports(); frRenderSpanLoads(); frRenderNodalLoads();
+}
+
+function frAddNode(){ frNodes.push([frNodes.length+1, 0, 0]); frRenderAll(); }
+function frAddElem(){
+  const nn=frNodes.length;
+  frElems.push([frElems.length+1, Math.min(1,nn), Math.min(2,nn), 1, 1e6, 1]);
+  frRenderElems();
+}
+function frAddSupport(){ frSupports.push([1,1,1,0]); frRenderSupports(); }
+function frAddSpanLoad(){ frSpanLoads.push([1,1,-10,0]); frRenderSpanLoads(); }
+function frAddNodalLoad(){ frNodalLoads.push([1,0,0,0]); frRenderNodalLoads(); }
+
+function frSwitchTab(name,el){
+  document.querySelectorAll('#fr-results .tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#fr-results .tab-content').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('fr-tab-'+name).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CORE FEM UTILITY — compute local FER for a single load entry
+// BUG-FIXED: concentrated moment uses correct equilibrium formula
+// ═══════════════════════════════════════════════════════════════
+function frFEM(type, mag, a, L){
+  let Vy1=0, Mz1=0, Vy2=0, Mz2=0;
+  if(type===1){ // UDL
+    Vy1=-mag*L/2; Mz1=-mag*L*L/12;
+    Vy2=-mag*L/2; Mz2= mag*L*L/12;
+  } else if(type===2){ // Point Load
+    const b=L-a;
+    Vy1=-mag*b*b*(3*a+b)/(L*L*L); Mz1=-mag*a*b*b/(L*L);
+    Vy2=-mag*a*a*(a+3*b)/(L*L*L); Mz2= mag*a*a*b/(L*L);
+  } else if(type===3){ // UVL left peak
+    Vy1=-0.35*mag*L; Mz1=-mag*L*L/20;
+    Vy2=-0.15*mag*L; Mz2= mag*L*L/30;
+  } else if(type===4){ // Sym triangle
+    Vy1=-mag*L/4; Mz1=-5*mag*L*L/96;
+    Vy2=-mag*L/4; Mz2= 5*mag*L*L/96;
+  } else if(type===5){ // Concentrated moment — FIXED formula
+    const b=L-a;
+    Mz1= mag*b*(b-2*a)/(L*L);
+    Mz2= mag*a*(2*b-a)/(L*L);
+    // equilibrium: ΣFy=0 → Vy1+Vy2=0; ΣM about node2=0 → Vy1*L + Mz1 + Mz2 - mag = 0
+    Vy1=(mag - Mz1 - Mz2)/L;
+    Vy2=-Vy1;
+  } else if(type===6){ // UVL right peak
+    Vy1=-0.15*mag*L; Mz1=-mag*L*L/30;
+    Vy2=-0.35*mag*L; Mz2= mag*L*L/20;
+  }
+  return [0, Vy1, Mz1, 0, Vy2, Mz2];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MATH HELPERS (reuse matInv from beam module)
+// ═══════════════════════════════════════════════════════════════
+function frMatVec(A,b){ return A.map(row=>row.reduce((s,v,j)=>s+v*b[j],0)); }
+function frMatMul(A,B){
+  const r=A.length, c=B[0].length, k=B.length;
+  return Array.from({length:r},(_,i)=>Array.from({length:c},(_,j)=>
+    Array.from({length:k},(_,p)=>A[i][p]*B[p][j]).reduce((a,b)=>a+b,0)));
+}
+function frTranspose(A){ return A[0].map((_,j)=>A.map(r=>r[j])); }
+
+// ═══════════════════════════════════════════════════════════════
+// TRANSFORMATION MATRIX T (6×6) given direction cosines c,s
+// ═══════════════════════════════════════════════════════════════
+function frT(c,s){
+  return [
+    [c, s, 0, 0, 0, 0],
+    [-s,c, 0, 0, 0, 0],
+    [0, 0, 1, 0, 0, 0],
+    [0, 0, 0, c, s, 0],
+    [0, 0, 0,-s, c, 0],
+    [0, 0, 0, 0, 0, 1]
+  ];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LOCAL STIFFNESS MATRIX (6×6)
+// ═══════════════════════════════════════════════════════════════
+function frKlocal(E,A,I,L){
+  const EA=E*A/L, EI12=12*E*I/(L*L*L), EI6=6*E*I/(L*L), EI4=4*E*I/L, EI2=2*E*I/L;
+  return [
+    [ EA,    0,    0,  -EA,    0,    0],
+    [  0,  EI12, EI6,    0, -EI12, EI6],
+    [  0,  EI6,  EI4,   0,  -EI6, EI2],
+    [-EA,    0,    0,   EA,    0,    0],
+    [  0, -EI12,-EI6,   0,  EI12,-EI6],
+    [  0,  EI6,  EI2,   0,  -EI6, EI4]
+  ];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN SOLVER
+// ═══════════════════════════════════════════════════════════════
+function frSolve(){
+  const errEl=document.getElementById('fr-err-msg');
+  errEl.style.display='none';
+
+  const numNodes=frNodes.length, numElem=frElems.length;
+  if(numNodes<2){ errEl.textContent='Need at least 2 nodes.'; errEl.style.display='block'; return; }
+  if(numElem<1){ errEl.textContent='Need at least 1 element.'; errEl.style.display='block'; return; }
+  if(frSupports.length<1){ errEl.textContent='Need at least one support.'; errEl.style.display='block'; return; }
+
+  const totalDOF=3*numNodes;
+
+  // ── Fixed DOFs
+  const fixedDOFs=[];
+  frSupports.forEach(sp=>{
+    const n=sp[0]-1;
+    if(sp[1]) fixedDOFs.push(3*n);
+    if(sp[2]) fixedDOFs.push(3*n+1);
+    if(sp[3]) fixedDOFs.push(3*n+2);
+  });
+  const fixedSet=new Set(fixedDOFs);
+  const freeDOFs=[...Array(totalDOF).keys()].filter(d=>!fixedSet.has(d));
+
+  if(freeDOFs.length===0){ errEl.textContent='All DOFs restrained — structure is over-constrained.'; errEl.style.display='block'; return; }
+
+  // ── Global load vector P
+  const P=new Array(totalDOF).fill(0);
+  frNodalLoads.forEach(nl=>{
+    const n=nl[0]-1;
+    P[3*n]  +=nl[1];
+    P[3*n+1]+=nl[2];
+    P[3*n+2]+=nl[3];
+  });
+
+  // ── Per-element geometry
+  const elemData=frElems.map(el=>{
+    const n1=el[1]-1, n2=el[2]-1;
+    const x1=frNodes[n1][1], y1=frNodes[n1][2];
+    const x2=frNodes[n2][1], y2=frNodes[n2][2];
+    const Lv=Math.sqrt((x2-x1)**2+(y2-y1)**2);
+    if(Lv<1e-10) return null;
+    const c=(x2-x1)/Lv, s=(y2-y1)/Lv;
+    const E=el[3], A=el[4], I=el[5];
+    const Kl=frKlocal(E,A,I,Lv);
+    const T=frT(c,s);
+    const Tt=frTranspose(T);
+    const Kg=frMatMul(Tt,frMatMul(Kl,T));
+    return {n1,n2,x1,y1,x2,y2,L:Lv,c,s,E,A,I,Kl,T,Tt,Kg};
+  });
+
+  if(elemData.some(e=>e===null)){
+    errEl.textContent='One or more elements have zero length — check node coordinates.';
+    errEl.style.display='block'; return;
+  }
+
+  // ── FER assembly
+  const FER_global=new Array(totalDOF).fill(0);
+  const FER_local=elemData.map(()=>[0,0,0,0,0,0]);
+
+  frSpanLoads.forEach(sl=>{
+    const ei=sl[0]-1; if(ei<0||ei>=numElem) return;
+    const ed=elemData[ei];
+    const fer=frFEM(sl[1],sl[2],sl[3],ed.L);
+    for(let k=0;k<6;k++) FER_local[ei][k]+=fer[k];
+    // Transform to global and accumulate
+    const ferG=frMatVec(ed.Tt,fer);
+    const dofs=[3*ed.n1, 3*ed.n1+1, 3*ed.n1+2, 3*ed.n2, 3*ed.n2+1, 3*ed.n2+2];
+    dofs.forEach((d,k)=>FER_global[d]+=ferG[k]);
+  });
+
+  // ── Effective load
+  const Peff=P.map((v,i)=>v-FER_global[i]);
+
+  // ── Assemble global K
+  const Ktot=Array.from({length:totalDOF},()=>new Array(totalDOF).fill(0));
+  elemData.forEach(ed=>{
+    const dofs=[3*ed.n1,3*ed.n1+1,3*ed.n1+2,3*ed.n2,3*ed.n2+1,3*ed.n2+2];
+    for(let p=0;p<6;p++) for(let q=0;q<6;q++) Ktot[dofs[p]][dofs[q]]+=ed.Kg[p][q];
+  });
+
+  // ── Partition and solve
+  const nf=freeDOFs.length;
+  const Kuu=freeDOFs.map(r=>freeDOFs.map(c=>Ktot[r][c]));
+  const Peff_u=freeDOFs.map(d=>Peff[d]);
+  const KuuInv=matInv(Kuu); // reuse beam module's matInv
+  if(!KuuInv){
+    errEl.textContent='Singular stiffness matrix — structure is unstable. Check supports and connectivity.';
+    errEl.style.display='block'; return;
+  }
+  const del_u=frMatVec(KuuInv,Peff_u);
+  const Delta=new Array(totalDOF).fill(0);
+  freeDOFs.forEach((d,i)=>Delta[d]=del_u[i]);
+
+  // ── Member end forces (local)
+  const forcesLocal=elemData.map((ed,i)=>{
+    const dofs=[3*ed.n1,3*ed.n1+1,3*ed.n1+2,3*ed.n2,3*ed.n2+1,3*ed.n2+2];
+    const delEl=dofs.map(d=>Delta[d]);
+    const delLocal=frMatVec(ed.T,delEl);
+    const f=frMatVec(ed.Kl,delLocal).map((v,k)=>v+FER_local[i][k]);
+    return f;
+  });
+
+  // ── Reactions
+  const Jf=new Array(totalDOF).fill(0);
+  elemData.forEach((ed,i)=>{
+    const dofs=[3*ed.n1,3*ed.n1+1,3*ed.n1+2,3*ed.n2,3*ed.n2+1,3*ed.n2+2];
+    const fG=frMatVec(ed.Tt,forcesLocal[i]);
+    dofs.forEach((d,k)=>Jf[d]+=fG[k]);
+  });
+  const reactions=[];
+  frSupports.forEach(sp=>{
+    const n=sp[0]-1;
+    if(sp[1]) reactions.push({node:n+1,type:'Rx',val:Jf[3*n]});
+    if(sp[2]) reactions.push({node:n+1,type:'Ry',val:Jf[3*n+1]});
+    if(sp[3]) reactions.push({node:n+1,type:'Mz',val:Jf[3*n+2]});
+  });
+
+  // ── Render everything
+  frRenderSchematic(elemData,forcesLocal,Delta,reactions);
+  frRenderDeflected(elemData,Delta);
+  frRenderDiagrams(elemData,forcesLocal);
+  frRenderMatrices(elemData,FER_local,forcesLocal,Delta,freeDOFs,fixedDOFs);
+  frRenderReactions(reactions);
+
+  document.getElementById('fr-placeholder').style.display='none';
+  document.getElementById('fr-results').style.display='block';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SHARED LAYOUT — centres frame, returns sc + toSvg
+// ═══════════════════════════════════════════════════════════════
+function frLayout(VW,VH,padH,padV){
+  const xs=frNodes.map(n=>n[1]),ys=frNodes.map(n=>n[2]);
+  const xMin=Math.min(...xs),xMax=Math.max(...xs);
+  const yMin=Math.min(...ys),yMax=Math.max(...ys);
+  const spanX=Math.max(xMax-xMin,0.01),spanY=Math.max(yMax-yMin,0.01);
+  const drawW=VW-2*padH,drawH=VH-2*padV;
+  const sc=Math.min(drawW/spanX,drawH/spanY);
+  const offX=padH+(drawW-spanX*sc)/2;
+  const offY=padV+(drawH-spanY*sc)/2;
+  const toSvg=(x,y)=>[offX+(x-xMin)*sc, VH-padV-(drawH-spanY*sc)/2-(y-yMin)*sc];
+  return {sc,toSvg,xMin,xMax,yMin,yMax,spanX,spanY};
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SCHEMATIC SVG RENDERER — large, clear, properly centred
+// ═══════════════════════════════════════════════════════════════
+function frRenderSchematic(elemData,forcesLocal,Delta,reactions){
+  const svg=document.getElementById('fr-svg');
+  const VW=860,VH=460;
+  const {sc,toSvg}=frLayout(VW,VH,90,80);
+
+  // Arrow markers
+  const COLS={amber:'#f7b94f',green:'#30c97a',cyan:'#4fd6f7',blue:'#4f8ef7',purple:'#a87fff',red:'#f75f5f'};
+  let defs='<defs>';
+  Object.entries(COLS).forEach(([k,c])=>{
+    defs+=`<marker id="fra-${k}" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,1 L7,4 L0,7 Z" fill="${c}"/>
+    </marker>`;
+  });
+  defs+='</defs>';
+  let els='';
+
+  // ── Span loads (behind members)
+  elemData.forEach((ed,i)=>{
+    const [svx1,svy1]=toSvg(ed.x1,ed.y1);
+    const [svx2,svy2]=toSvg(ed.x2,ed.y2);
+    const dx=svx2-svx1,dy=svy2-svy1,Lsvg=Math.sqrt(dx*dx+dy*dy);
+    if(Lsvg<1) return;
+    const ux=dx/Lsvg,uy=dy/Lsvg;
+    const nx=-uy,ny=ux; // local +Y in SVG
+
+    frSpanLoads.filter(sl=>sl[0]-1===i).forEach(sl=>{
+      const type=sl[1],mag=sl[2],a=sl[3];
+      const col='#f7b94f',ck='amber';
+      const alen=Math.min(44,Lsvg*0.22);
+      const sign=mag<0?1:-1; // negative mag = load toward member (standard: -ve is downward for horiz member)
+
+      if(type===1){ // UDL
+        const barOff=alen+6;
+        const nArr=Math.max(3,Math.round(Lsvg/36));
+        els+=`<line x1="${svx1+nx*barOff*sign}" y1="${svy1+ny*barOff*sign}" x2="${svx2+nx*barOff*sign}" y2="${svy2+ny*barOff*sign}" stroke="${col}" stroke-width="2.2"/>`;
+        for(let k=0;k<=nArr;k++){
+          const t=k/nArr;
+          const ax=svx1+ux*Lsvg*t,ay=svy1+uy*Lsvg*t;
+          els+=`<line x1="${ax+nx*barOff*sign}" y1="${ay+ny*barOff*sign}" x2="${ax+nx*5*sign}" y2="${ay+ny*5*sign}" stroke="${col}" stroke-width="1.8" marker-end="url(#fra-${ck})"/>`;
+        }
+        const lx=(svx1+svx2)/2+nx*(alen+20)*sign,ly=(svy1+svy2)/2+ny*(alen+20)*sign;
+        els+=`<rect x="${lx-28}" y="${ly-9}" width="56" height="16" rx="3" fill="#0c0e14" opacity="0.85"/>`;
+        els+=`<text x="${lx}" y="${ly+2}" text-anchor="middle" dominant-baseline="middle" fill="${col}" font-size="11" font-family="JetBrains Mono,monospace" font-weight="600">${Math.abs(mag)} kN/m</text>`;
+
+      } else if(type===2){ // Point load
+        const t=a/ed.L,px=svx1+ux*Lsvg*t,py=svy1+uy*Lsvg*t;
+        els+=`<line x1="${px+nx*alen*sign}" y1="${py+ny*alen*sign}" x2="${px+nx*5*sign}" y2="${py+ny*5*sign}" stroke="${col}" stroke-width="2.8" marker-end="url(#fra-${ck})"/>`;
+        const lx=px+nx*(alen+16)*sign,ly=py+ny*(alen+16)*sign;
+        els+=`<rect x="${lx-24}" y="${ly-9}" width="48" height="16" rx="3" fill="#0c0e14" opacity="0.85"/>`;
+        els+=`<text x="${lx}" y="${ly+2}" text-anchor="middle" dominant-baseline="middle" fill="${col}" font-size="11" font-family="JetBrains Mono,monospace" font-weight="600">${Math.abs(mag)} kN</text>`;
+
+      } else if(type===5){ // Concentrated moment
+        const t=a/ed.L,px=svx1+ux*Lsvg*t,py=svy1+uy*Lsvg*t,r=16,sw=mag>0?1:0;
+        els+=`<path d="M${px-r},${py} A${r},${r} 0 1 ${sw} ${px+r},${py}" fill="none" stroke="${col}" stroke-width="2.2" marker-end="url(#fra-${ck})"/>`;
+        els+=`<text x="${px}" y="${py-r-10}" text-anchor="middle" fill="${col}" font-size="11" font-family="JetBrains Mono,monospace" font-weight="600">${Math.abs(mag)} kNm</text>`;
+
+      } else { // UVL (3,4,6)
+        const nArr=7,barOff=alen+6;
+        for(let k=0;k<=nArr;k++){
+          const t=k/nArr;
+          let h=type===3?(1-t)*alen:type===6?t*alen:(t<=0.5?t*2:(1-t)*2)*alen;
+          const ax=svx1+ux*Lsvg*t,ay=svy1+uy*Lsvg*t;
+          if(h>3) els+=`<line x1="${ax+nx*h*sign}" y1="${ay+ny*h*sign}" x2="${ax+nx*4*sign}" y2="${ay+ny*4*sign}" stroke="${col}" stroke-width="1.6" marker-end="url(#fra-${ck})"/>`;
+        }
+        const lx=(svx1+svx2)/2+nx*(alen+20)*sign,ly=(svy1+svy2)/2+ny*(alen+20)*sign;
+        els+=`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" fill="${col}" font-size="11" font-family="JetBrains Mono,monospace" font-weight="600">${Math.abs(mag)} kN/m</text>`;
+      }
+    });
+  });
+
+  // ── Member lines
+  elemData.forEach((ed,i)=>{
+    const [svx1,svy1]=toSvg(ed.x1,ed.y1);
+    const [svx2,svy2]=toSvg(ed.x2,ed.y2);
+    els+=`<line x1="${svx1}" y1="${svy1}" x2="${svx2}" y2="${svy2}" stroke="#4f8ef7" stroke-width="7" stroke-linecap="round"/>`;
+    const mx=(svx1+svx2)/2,my=(svy1+svy2)/2;
+    const Lsvg=Math.sqrt((svx2-svx1)**2+(svy2-svy1)**2)||1;
+    const nx=-(svy2-svy1)/Lsvg*14,ny=(svx2-svx1)/Lsvg*14;
+    els+=`<rect x="${mx+nx-14}" y="${my+ny-9}" width="28" height="16" rx="4" fill="#111420" opacity="0.85"/>`;
+    els+=`<text x="${mx+nx}" y="${my+ny+1}" text-anchor="middle" dominant-baseline="middle" fill="#4f8ef7" font-size="11" font-family="JetBrains Mono,monospace" font-weight="700">E${i+1}</text>`;
+  });
+
+  // ── Nodal loads
+  frNodalLoads.forEach(nl=>{
+    const nd=frNodes[nl[0]-1]; if(!nd) return;
+    const [sx,sy]=toSvg(nd[1],nd[2]);
+    const col='#30c97a',ck='green',al=50;
+    if(nl[1]!==0){
+      const sign=nl[1]>0?1:-1;
+      els+=`<line x1="${sx-sign*al}" y1="${sy}" x2="${sx-sign*7}" y2="${sy}" stroke="${col}" stroke-width="2.5" marker-end="url(#fra-${ck})"/>`;
+      els+=`<text x="${sx-sign*(al+8)}" y="${sy-8}" text-anchor="middle" fill="${col}" font-size="11" font-family="JetBrains Mono,monospace" font-weight="600">${nl[1]} kN</text>`;
+    }
+    if(nl[2]!==0){
+      const sign=nl[2]>0?-1:1; // +Fy up → SVG y decreases
+      els+=`<line x1="${sx}" y1="${sy-sign*al}" x2="${sx}" y2="${sy-sign*7}" stroke="${col}" stroke-width="2.5" marker-end="url(#fra-${ck})"/>`;
+      els+=`<text x="${sx+10}" y="${sy-sign*(al+8)}" fill="${col}" font-size="11" font-family="JetBrains Mono,monospace" font-weight="600">${nl[2]} kN</text>`;
+    }
+    if(nl[3]!==0){
+      const r=18,sw=nl[3]>0?1:0;
+      els+=`<path d="M${sx-r},${sy} A${r},${r} 0 1 ${sw} ${sx+r},${sy}" fill="none" stroke="${col}" stroke-width="2.2" marker-end="url(#fra-${ck})"/>`;
+      els+=`<text x="${sx}" y="${sy-r-10}" text-anchor="middle" fill="${col}" font-size="11" font-family="JetBrains Mono,monospace" font-weight="600">${nl[3]} kNm</text>`;
+    }
+  });
+
+  // ── Support symbols (clear engineering style)
+  frSupports.forEach(sp=>{
+    const nd=frNodes[sp[0]-1]; if(!nd) return;
+    const [sx,sy]=toSvg(nd[1],nd[2]);
+    const fixX=sp[1],fixY=sp[2],fixMz=sp[3];
+    if(fixX&&fixY&&fixMz){ // Fixed
+      // detect wall direction: bottom wall if node at yMin, else left/right
+      const isBottom=nd[2]===Math.min(...frNodes.map(n=>n[2]));
+      if(isBottom){
+        els+=`<line x1="${sx-28}" y1="${sy+16}" x2="${sx+28}" y2="${sy+16}" stroke="#a87fff" stroke-width="3"/>`;
+        for(let g=0;g<6;g++) els+=`<line x1="${sx-22+g*9}" y1="${sy+16}" x2="${sx-28+g*9}" y2="${sy+26}" stroke="#a87fff" stroke-width="1.8"/>`;
+        els+=`<rect x="${sx-8}" y="${sy-8}" width="16" height="16" rx="2" fill="none" stroke="#a87fff" stroke-width="2"/>`;
+      } else {
+        const side=nd[1]===Math.min(...frNodes.map(n=>n[1]))?-1:1;
+        els+=`<line x1="${sx+side*16}" y1="${sy-28}" x2="${sx+side*16}" y2="${sy+28}" stroke="#a87fff" stroke-width="3"/>`;
+        for(let g=0;g<6;g++) els+=`<line x1="${sx+side*16}" y1="${sy-22+g*9}" x2="${sx+side*26}" y2="${sy-28+g*9}" stroke="#a87fff" stroke-width="1.8"/>`;
+        els+=`<rect x="${sx-8}" y="${sy-8}" width="16" height="16" rx="2" fill="none" stroke="#a87fff" stroke-width="2"/>`;
+      }
+    } else if(fixX&&fixY){ // Pin
+      els+=`<polygon points="${sx},${sy+3} ${sx-15},${sy+26} ${sx+15},${sy+26}" fill="#0c0e14" stroke="#4f8ef7" stroke-width="2.2"/>`;
+      els+=`<circle cx="${sx}" cy="${sy+3}" r="4" fill="#4f8ef7"/>`;
+      els+=`<line x1="${sx-18}" y1="${sy+28}" x2="${sx+18}" y2="${sy+28}" stroke="#4f8ef7" stroke-width="2.2"/>`;
+      for(let g=0;g<5;g++) els+=`<line x1="${sx-14+g*7}" y1="${sy+28}" x2="${sx-20+g*7}" y2="${sy+36}" stroke="#4f8ef7" stroke-width="1.6"/>`;
+    } else if(fixY){ // Roller
+      els+=`<polygon points="${sx},${sy+3} ${sx-15},${sy+26} ${sx+15},${sy+26}" fill="#0c0e14" stroke="#4fd6f7" stroke-width="2.2"/>`;
+      els+=`<circle cx="${sx}" cy="${sy+3}" r="3.5" fill="#4fd6f7"/>`;
+      els+=`<circle cx="${sx-8}" cy="${sy+30}" r="3.5" fill="none" stroke="#4fd6f7" stroke-width="1.8"/>`;
+      els+=`<circle cx="${sx+8}" cy="${sy+30}" r="3.5" fill="none" stroke="#4fd6f7" stroke-width="1.8"/>`;
+      els+=`<line x1="${sx-18}" y1="${sy+35}" x2="${sx+18}" y2="${sy+35}" stroke="#4fd6f7" stroke-width="1.5"/>`;
+    } else if(fixX){ // Side roller
+      els+=`<polygon points="${sx-3},${sy} ${sx-26},${sy-15} ${sx-26},${sy+15}" fill="#0c0e14" stroke="#4fd6f7" stroke-width="2"/>`;
+      els+=`<line x1="${sx-28}" y1="${sy-18}" x2="${sx-28}" y2="${sy+18}" stroke="#4fd6f7" stroke-width="1.8"/>`;
+    }
+  });
+
+  // ── Reaction arrows
+  reactions.forEach(r=>{
+    const nd=frNodes[r.node-1]; if(!nd) return;
+    const [sx,sy]=toSvg(nd[1],nd[2]);
+    const v=r.val,col='#f75f5f',ck='red',al=44;
+    if(r.type==='Rx'){
+      const sign=v>=0?1:-1;
+      els+=`<line x1="${sx-sign*al}" y1="${sy}" x2="${sx-sign*7}" y2="${sy}" stroke="${col}" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#fra-${ck})"/>`;
+      els+=`<rect x="${sx-sign*(al+4)-24}" y="${sy-9}" width="48" height="16" rx="3" fill="#0c0e14" opacity="0.9"/>`;
+      els+=`<text x="${sx-sign*(al+4)}" y="${sy+2}" text-anchor="middle" dominant-baseline="middle" fill="${col}" font-size="10" font-family="JetBrains Mono,monospace" font-weight="600">${v.toFixed(2)}</text>`;
+    } else if(r.type==='Ry'){
+      const sign=v>=0?-1:1;
+      els+=`<line x1="${sx}" y1="${sy-sign*al}" x2="${sx}" y2="${sy-sign*7}" stroke="${col}" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#fra-${ck})"/>`;
+      els+=`<rect x="${sx-24}" y="${sy-sign*(al+4)-8}" width="48" height="16" rx="3" fill="#0c0e14" opacity="0.9"/>`;
+      els+=`<text x="${sx}" y="${sy-sign*(al+4)}" text-anchor="middle" dominant-baseline="middle" fill="${col}" font-size="10" font-family="JetBrains Mono,monospace" font-weight="600">${v.toFixed(2)}</text>`;
+    } else if(r.type==='Mz'){
+      const r2=14,sw=v>0?1:0;
+      els+=`<path d="M${sx-r2},${sy} A${r2},${r2} 0 1 ${sw} ${sx+r2},${sy}" fill="none" stroke="${col}" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#fra-${ck})"/>`;
+      els+=`<text x="${sx}" y="${sy-r2-10}" text-anchor="middle" fill="${col}" font-size="10" font-family="JetBrains Mono,monospace" font-weight="600">${v.toFixed(2)}</text>`;
+    }
+  });
+
+  // ── Node dots + labels
+  frNodes.forEach((nd,i)=>{
+    const [sx,sy]=toSvg(nd[1],nd[2]);
+    els+=`<circle cx="${sx}" cy="${sy}" r="7" fill="#1e2438" stroke="#4f8ef7" stroke-width="2.5"/>`;
+    els+=`<text x="${sx+11}" y="${sy-5}" fill="#8090c0" font-size="12" font-family="JetBrains Mono,monospace" font-weight="600">N${i+1}</text>`;
+    els+=`<text x="${sx+11}" y="${sy+8}" fill="#3a4870" font-size="9.5" font-family="JetBrains Mono,monospace">(${nd[1]},${nd[2]})</text>`;
+  });
+
+  svg.setAttribute('viewBox',`0 0 ${VW} ${VH}`);
+  svg.innerHTML=defs+els;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DEFLECTED SHAPE — fixed amplification, proper Hermite
+// ═══════════════════════════════════════════════════════════════
+function frRenderDeflected(elemData,Delta){
+  const svg=document.getElementById('fr-def-svg');
+  const VW=860,VH=360;
+  const {sc,toSvg,spanX,spanY}=frLayout(VW,VH,90,70);
+
+  // Physical amp: max displacement = 10% of smaller frame dimension
+  const maxDel=Math.max(...frNodes.map((_,i)=>Math.sqrt(Delta[3*i]**2+Delta[3*i+1]**2)),1e-12);
+  const amp=Math.min(spanX,spanY)*0.10/maxDel;
+
+  const label=document.getElementById('fr-amp-label');
+  if(label) label.textContent=`(amplified ×${amp.toFixed(0)})`;
+
+  let els='';
+
+  // Undeformed ghost
+  elemData.forEach(ed=>{
+    const [svx1,svy1]=toSvg(ed.x1,ed.y1);
+    const [svx2,svy2]=toSvg(ed.x2,ed.y2);
+    els+=`<line x1="${svx1}" y1="${svy1}" x2="${svx2}" y2="${svy2}" stroke="#1e2438" stroke-width="5" stroke-dasharray="7,5" stroke-linecap="round"/>`;
+  });
+
+  // Deformed via Hermite — all in physical coords, then toSvg
+  elemData.forEach(ed=>{
+    const n1=ed.n1,n2=ed.n2;
+    // amplified physical displacements
+    const du1=Delta[3*n1]*amp,  dv1=Delta[3*n1+1]*amp, th1=Delta[3*n1+2]*amp;
+    const du2=Delta[3*n2]*amp,  dv2=Delta[3*n2+1]*amp, th2=Delta[3*n2+2]*amp;
+    // local frame
+    const uL1=ed.c*du1+ed.s*dv1, vL1=-ed.s*du1+ed.c*dv1;
+    const uL2=ed.c*du2+ed.s*dv2, vL2=-ed.s*du2+ed.c*dv2;
+    const L=ed.L;
+    const pts=[];
+    for(let k=0;k<=50;k++){
+      const xi=k/50;
+      const N1h=1-3*xi*xi+2*xi*xi*xi, N2h=(xi-2*xi*xi+xi*xi*xi)*L;
+      const N3h=3*xi*xi-2*xi*xi*xi,   N4h=(-xi*xi+xi*xi*xi)*L;
+      const vLoc=N1h*vL1+N2h*th1+N3h*vL2+N4h*th2;
+      const uLoc=(1-xi)*uL1+xi*uL2;
+      // back to global (amplified physical coords)
+      const xG=ed.x1+xi*(ed.x2-ed.x1)+ed.c*uLoc-ed.s*vLoc;
+      const yG=ed.y1+xi*(ed.y2-ed.y1)+ed.s*uLoc+ed.c*vLoc;
+      const [sx,sy]=toSvg(xG,yG);
+      pts.push(`${sx.toFixed(1)},${sy.toFixed(1)}`);
+    }
+    els+=`<polyline points="${pts.join(' ')}" fill="none" stroke="#30c97a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+  });
+
+  // Deformed node dots
+  frNodes.forEach((nd,i)=>{
+    const xD=nd[1]+Delta[3*i]*amp, yD=nd[2]+Delta[3*i+1]*amp;
+    const [sx,sy]=toSvg(xD,yD);
+    els+=`<circle cx="${sx}" cy="${sy}" r="5" fill="#30c97a" stroke="#0c0e14" stroke-width="2"/>`;
+  });
+
+  // Legend
+  els+=`<line x1="14" y1="${VH-18}" x2="48" y2="${VH-18}" stroke="#30c97a" stroke-width="3"/>`;
+  els+=`<text x="54" y="${VH-13}" fill="#30c97a" font-size="10" font-family="JetBrains Mono,monospace">Deformed</text>`;
+  els+=`<line x1="150" y1="${VH-18}" x2="184" y2="${VH-18}" stroke="#1e2438" stroke-width="4" stroke-dasharray="7,4"/>`;
+  els+=`<text x="190" y="${VH-13}" fill="#3a4870" font-size="10" font-family="JetBrains Mono,monospace">Undeformed</text>`;
+
+  svg.setAttribute('viewBox',`0 0 ${VW} ${VH}`);
+  svg.innerHTML=els;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DIAGRAM HELPER — compute V,M arrays for one element
+// ═══════════════════════════════════════════════════════════════
+function frComputeDiagram(ed,i,PTS){
+  const fl=frSolveCache.forcesLocal[i];
+  const V1=fl[1],M1=fl[2];
+  const Xs=[],Vs=[],Ms=[];
+  for(let k=0;k<=PTS;k++){
+    const x=k*ed.L/PTS;
+    let V=V1, M=-M1+V1*x;
+    frSpanLoads.filter(sl=>sl[0]-1===i).forEach(sl=>{
+      const type=sl[1],mag=sl[2],a=sl[3],L=ed.L;
+      if(type===1){V+=mag*x; M+=mag*x*x/2;}
+      else if(type===2){if(x>=a){V+=mag; M+=mag*(x-a);}}
+      else if(type===3){V+=mag*(x-x*x/(2*L)); M+=mag*(x*x/2-x*x*x/(6*L));}
+      else if(type===4){
+        if(x<=L/2){V+=mag*x*x/L; M+=mag*x*x*x/(3*L);}
+        else{V+=mag*(2*x-x*x/L-L/2); M+=mag*(x*x-x*x*x/(3*L)-x*L/2+L*L/12);}
+      }
+      else if(type===5){if(x>a) M+=mag;}
+      else if(type===6){V+=mag*x*x/(2*L); M+=mag*x*x*x/(6*L);}
+    });
+    Xs.push(+x.toFixed(4)); Vs.push(+V.toFixed(5)); Ms.push(+M.toFixed(5));
+  }
+  return {Xs,Vs,Ms};
+}
+
+// cache for diagram access
+let frSolveCache={forcesLocal:[]};
+
+// ═══════════════════════════════════════════════════════════════
+// FULL-FRAME SVG SFD/BMD — drawn on frame geometry
+// ═══════════════════════════════════════════════════════════════
+function frRenderSFD_BMD(elemData){
+  ['fr-sfd-svg','fr-bmd-svg'].forEach((svgId,di)=>{
+    const svg=document.getElementById(svgId);
+    const VW=860,VH=320;
+    const {sc,toSvg}=frLayout(VW,VH,90,60);
+    const isSFD=di===0;
+    const col=isSFD?'#4fd6f7':'#30c97a';
+    const fillCol=isSFD?'#4fd6f712':'#30c97a12';
+
+    // Compute global max amplitude for consistent scale
+    let gMax=0;
+    elemData.forEach((ed,i)=>{
+      const {Vs,Ms}=frComputeDiagram(ed,i,60);
+      const arr=isSFD?Vs:Ms;
+      arr.forEach(v=>{if(Math.abs(v)>gMax) gMax=Math.abs(v);});
+    });
+    if(gMax<1e-10) gMax=1;
+
+    // amplitude scale: max diagram height = 35% of smallest member SVG length
+    const minLsvg=Math.min(...elemData.map(ed=>{
+      const [a1,a2]=toSvg(ed.x1,ed.y1),[b1,b2]=toSvg(ed.x2,ed.y2);
+      return Math.sqrt((b1-a1)**2+(b2-a2)**2);
+    }));
+    const diagSc=Math.max(minLsvg*0.45,40)/gMax;
+
+    let defs=`<defs>
+      <marker id="sv-arr-${di}" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" fill="${col}"/>
+      </marker>
+    </defs>`;
+    let els='';
+
+    // Ghost members
+    elemData.forEach(ed=>{
+      const [s1x,s1y]=toSvg(ed.x1,ed.y1),[s2x,s2y]=toSvg(ed.x2,ed.y2);
+      els+=`<line x1="${s1x}" y1="${s1y}" x2="${s2x}" y2="${s2y}" stroke="#1a2030" stroke-width="5" stroke-linecap="round"/>`;
+    });
+
+    elemData.forEach((ed,i)=>{
+      const {Xs,Vs,Ms}=frComputeDiagram(ed,i,80);
+      const arr=isSFD?Vs:Ms;
+      const [svx1,svy1]=toSvg(ed.x1,ed.y1),[svx2,svy2]=toSvg(ed.x2,ed.y2);
+      const dx=svx2-svx1,dy=svy2-svy1,Lsvg=Math.sqrt(dx*dx+dy*dy)||1;
+      const ux=dx/Lsvg,uy=dy/Lsvg;
+      const nx=-uy,ny=ux; // local +Y
+
+      const fillPts=[`${svx1.toFixed(1)},${svy1.toFixed(1)}`];
+      const linePts=[];
+      let peakVal=0,peakPx=0,peakPy=0;
+
+      arr.forEach((val,k)=>{
+        const t=Xs[k]/ed.L;
+        const bx=svx1+ux*Lsvg*t,by=svy1+uy*Lsvg*t;
+        const a2=val*diagSc;
+        const px=bx+nx*a2,py=by+ny*a2;
+        fillPts.push(`${px.toFixed(1)},${py.toFixed(1)}`);
+        linePts.push(`${px.toFixed(1)},${py.toFixed(1)}`);
+        if(Math.abs(val)>Math.abs(peakVal)){peakVal=val;peakPx=px;peakPy=py;}
+      });
+      fillPts.push(`${svx2.toFixed(1)},${svy2.toFixed(1)}`);
+
+      els+=`<polygon points="${fillPts.join(' ')}" fill="${fillCol}" stroke="none"/>`;
+      els+=`<line x1="${svx1}" y1="${svy1}" x2="${svx2}" y2="${svy2}" stroke="${col}" stroke-width="1.2" opacity="0.3"/>`;
+      els+=`<polyline points="${linePts.join(' ')}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+      // End values
+      const v0=arr[0],vE=arr[arr.length-1];
+      const a0=v0*diagSc,aE=vE*diagSc;
+      const lbl=(x,y,txt,anchor='middle')=>{
+        const w=txt.length*6.5+10;
+        return `<rect x="${x-w/2}" y="${y-9}" width="${w}" height="16" rx="3" fill="#0c0e14" opacity="0.88"/>
+          <text x="${x}" y="${y+2}" text-anchor="middle" dominant-baseline="middle" fill="${col}" font-size="10.5" font-family="JetBrains Mono,monospace" font-weight="700">${txt}</text>`;
+      };
+      // Position labels offset outward from member
+      const off=16;
+      els+=lbl(svx1+nx*(a0+Math.sign(a0||1)*off), svy1+ny*(a0+Math.sign(a0||1)*off), v0.toFixed(2));
+      els+=lbl(svx2+nx*(aE+Math.sign(aE||1)*off), svy2+ny*(aE+Math.sign(aE||1)*off), vE.toFixed(2));
+      if(Math.abs(peakVal)>Math.abs(v0)+0.01&&Math.abs(peakVal)>Math.abs(vE)+0.01){
+        els+=lbl(peakPx+nx*off*Math.sign(peakVal||1), peakPy+ny*off*Math.sign(peakVal||1), peakVal.toFixed(2));
+      }
+    });
+
+    // Member labels on top
+    elemData.forEach((ed,i)=>{
+      const [s1x,s1y]=toSvg(ed.x1,ed.y1),[s2x,s2y]=toSvg(ed.x2,ed.y2);
+      els+=`<text x="${(s1x+s2x)/2}" y="${(s1y+s2y)/2}" text-anchor="middle" dominant-baseline="middle" fill="#2e3858" font-size="11" font-family="JetBrains Mono,monospace">E${i+1}</text>`;
+    });
+
+    svg.setAttribute('viewBox',`0 0 ${VW} ${VH}`);
+    svg.innerHTML=defs+els;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DIAGRAMS — per-element Chart.js (SFD + BMD)
+// ═══════════════════════════════════════════════════════════════
+function frRenderDiagrams(elemData,forcesLocal){
+  frSolveCache={forcesLocal};
+  Object.values(frCharts).forEach(c=>{try{c.destroy();}catch(e){}});
+  frCharts={};
+
+  frRenderSFD_BMD(elemData);
+
+  const container=document.getElementById('fr-chart-container');
+  container.innerHTML='';
+  const hdr=document.createElement('div');
+  hdr.innerHTML=`<div class="sec-title" style="margin-top:14px">Per-Element Diagrams</div>`;
+  container.appendChild(hdr);
+
+  elemData.forEach((ed,i)=>{
+    const {Xs,Vs,Ms}=frComputeDiagram(ed,i,120);
+    const peakV=Vs.reduce((a,b)=>Math.abs(b)>Math.abs(a)?b:a,0);
+    const peakM=Ms.reduce((a,b)=>Math.abs(b)>Math.abs(a)?b:a,0);
+
+    const wrap=document.createElement('div');
+    wrap.innerHTML=`
+      <div class="card" style="margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <div style="font-size:13px;font-weight:600;color:var(--text)">Element ${i+1}
+            <span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:8px">N${ed.n1+1}→N${ed.n2+1} · L=${ed.L.toFixed(2)}m</span>
+          </div>
+          <div style="display:flex;gap:18px">
+            <span style="font-size:11px;font-family:var(--mono);color:#4fd6f7">V<sub>max</sub> = ${peakV.toFixed(3)} kN</span>
+            <span style="font-size:11px;font-family:var(--mono);color:#30c97a">M<sub>max</sub> = ${peakM.toFixed(3)} kNm</span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div>
+            <div style="font-size:10px;color:#4fd6f7;margin-bottom:5px;font-family:var(--mono);letter-spacing:.6px">SHEAR FORCE (kN)</div>
+            <div style="height:180px"><canvas id="fr-sfd-${i}"></canvas></div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:#30c97a;margin-bottom:5px;font-family:var(--mono);letter-spacing:.6px">BENDING MOMENT (kNm)</div>
+            <div style="height:180px"><canvas id="fr-bmd-${i}"></canvas></div>
+          </div>
+        </div>
+      </div>`;
+    container.appendChild(wrap);
+
+    const mkOpts=(lbl,col)=>({
+      responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{legend:{display:false},tooltip:{
+        backgroundColor:'#1e2438',borderColor:'#2e3858',borderWidth:1,
+        titleColor:'#8090c0',bodyColor:'#dde3f5',
+        titleFont:{family:'JetBrains Mono',size:10},bodyFont:{family:'JetBrains Mono',size:10},
+        callbacks:{title:c=>`ξ = ${c[0].label} m`,label:c=>`${c.parsed.y.toFixed(3)} ${lbl}`}
+      }},
+      scales:{
+        x:{ticks:{maxTicksLimit:8,color:'#4a5680',font:{family:'JetBrains Mono',size:9}},grid:{color:'#1a2030'},
+           title:{display:true,text:'ξ (m)',color:'#4a5680',font:{size:9,family:'JetBrains Mono'}}},
+        y:{ticks:{color:'#4a5680',font:{family:'JetBrains Mono',size:9},maxTicksLimit:6},grid:{color:'#1a2030'},
+           title:{display:true,text:lbl,color:'#4a5680',font:{size:9,family:'JetBrains Mono'}}}
+      }
+    });
+    frCharts[`sfd-${i}`]=new Chart(document.getElementById(`fr-sfd-${i}`),{
+      type:'line',data:{labels:Xs,datasets:[{data:Vs,borderColor:'#4fd6f7',borderWidth:2,pointRadius:0,tension:0,
+        fill:{target:'origin',above:'#4fd6f715',below:'#4fd6f715'}}]},options:mkOpts('V (kN)','#4fd6f7')});
+    frCharts[`bmd-${i}`]=new Chart(document.getElementById(`fr-bmd-${i}`),{
+      type:'line',data:{labels:Xs,datasets:[{data:Ms,borderColor:'#30c97a',borderWidth:2,pointRadius:0,tension:0,
+        fill:{target:'origin',above:'#30c97a15',below:'#30c97a15'}}]},options:mkOpts('M (kNm)','#30c97a')});
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MATRICES / RESULTS TAB — no DOF table, clear tables
+// ═══════════════════════════════════════════════════════════════
+function frRenderMatrices(elemData,FER_local,forcesLocal,Delta,freeDOFs,fixedDOFs){
+  // Member end forces (local)
+  let mt=`<tr><th>Elem</th><th>Nodes</th><th>Px1 (kN)</th><th>Vy1 (kN)</th><th>Mz1 (kNm)</th><th>Px2 (kN)</th><th>Vy2 (kN)</th><th>Mz2 (kNm)</th></tr>`;
+  elemData.forEach((ed,i)=>{
+    const f=forcesLocal[i];
+    mt+=`<tr><td>E${i+1}</td><td style="color:var(--text3);font-size:10px">N${ed.n1+1}→N${ed.n2+1}</td>`;
+    mt+=f.map(v=>{const n=+v.toFixed(4);return `<td class="${n>1e-6?'pos':n<-1e-6?'neg':''}">${n.toFixed(4)}</td>`;}).join('');
+    mt+=`</tr>`;
+  });
+  document.getElementById('fr-mef-table').innerHTML=mt;
+
+  // FEM table
+  let ft=`<tr><th>Elem</th><th>Nodes</th><th>Px1</th><th>Vy1</th><th>Mz1</th><th>Px2</th><th>Vy2</th><th>Mz2</th></tr>`;
+  elemData.forEach((ed,i)=>{
+    const f=FER_local[i];
+    ft+=`<tr><td>E${i+1}</td><td style="color:var(--text3);font-size:10px">N${ed.n1+1}→N${ed.n2+1}</td>`;
+    ft+=f.map(v=>{const n=+v.toFixed(4);return `<td class="${n>1e-6?'pos':n<-1e-6?'neg':''}">${n.toFixed(4)}</td>`;}).join('');
+    ft+=`</tr>`;
+  });
+  document.getElementById('fr-fem-table').innerHTML=ft;
+
+  // Nodal displacements — styled cards
+  let dg='';
+  frNodes.forEach((nd,i)=>{
+    const u=Delta[3*i],v=Delta[3*i+1],th=Delta[3*i+2];
+    const cc=d=>Math.abs(d)>1e-10?'var(--cyan)':'var(--text3)';
+    dg+=`<div class="disp-card"><div class="disp-dof">N${i+1} · δx</div><div class="disp-val" style="color:${cc(u)}">${u.toExponential(4)}</div><div style="font-size:9px;color:var(--text3)">m</div></div>`;
+    dg+=`<div class="disp-card"><div class="disp-dof">N${i+1} · δy</div><div class="disp-val" style="color:${cc(v)}">${v.toExponential(4)}</div><div style="font-size:9px;color:var(--text3)">m</div></div>`;
+    dg+=`<div class="disp-card"><div class="disp-dof">N${i+1} · θ</div><div class="disp-val" style="color:${cc(th)}">${th.toExponential(4)}</div><div style="font-size:9px;color:var(--text3)">rad</div></div>`;
+  });
+  document.getElementById('fr-disp-grid').innerHTML=dg;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REACTIONS TAB
+// ═══════════════════════════════════════════════════════════════
+function frRenderReactions(reactions){
+  let html='';
+  reactions.forEach(r=>{
+    const v=+r.val.toFixed(3);
+    const unit=r.type==='Mz'?'kNm':'kN';
+    html+=`<div class="rxn-card">
+      <div class="rxn-label">N${r.node} — ${r.type}</div>
+      <div class="rxn-val ${v>=0?'pos':'neg'}">${v>=0?'+':''}${v}</div>
+      <div class="rxn-unit">${unit}</div>
+    </div>`;
+  });
+  document.getElementById('fr-rxn-grid').innerHTML=html;
+
+  const sumFx=reactions.filter(r=>r.type==='Rx').reduce((s,r)=>s+r.val,0);
+  const sumFy=reactions.filter(r=>r.type==='Ry').reduce((s,r)=>s+r.val,0);
+  // also add nodal loads to check
+  const totFx=frNodalLoads.reduce((s,nl)=>s+nl[1],0);
+  const totFy=frNodalLoads.reduce((s,nl)=>s+nl[2],0);
+  const okX=Math.abs(sumFx+totFx)<0.1, okY=Math.abs(sumFy+totFy)<0.1;
+  const ok=okX&&okY;
+  document.getElementById('fr-equil-card').innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${okX?'var(--green)':'var(--red)'}"></div>
+        <div style="font-size:12px;color:var(--text2)">ΣFx = <span style="font-family:var(--mono);color:${okX?'var(--green)':'var(--red)'}">${(sumFx+totFx).toFixed(4)} kN</span></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${okY?'var(--green)':'var(--red)'}"></div>
+        <div style="font-size:12px;color:var(--text2)">ΣFy = <span style="font-family:var(--mono);color:${okY?'var(--green)':'var(--red)'}">${(sumFy+totFy).toFixed(4)} kN</span></div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:2px">${ok?'Equilibrium satisfied ✓':'⚠ Residual forces detected — verify loads'}</div>
+    </div>`;
+}
+
+// ── Init frame UI
+frRenderAll();
+
+// ═══════════════════════════════════════════════
+// INIT BEAM MODULE
+// ═══════════════════════════════════════════════
+rebuildGeometry();
+renderSpanLoads();
+renderNodalLoads();
+</script>
+</body>
+</html>
