@@ -11,10 +11,6 @@ A browser-based structural analysis tool that solves beams using the Direct Stif
 3. Plots the results as charts using Chart.js
 4. Shows the output in tabs so results are easy to read
 
-## Screenshot
-
-(drag your screenshot here)
-
 ## Tech used
 
 JavaScript, SVG, Chart.js, HTML/CSS
